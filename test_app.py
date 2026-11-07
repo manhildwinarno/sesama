@@ -1,37 +1,46 @@
-"""Jalankan dengan Python ENV_001; tidak mengakses webcam atau internet."""
-from pathlib import Path
-from streamlit.testing.v1 import AppTest
+"""python test_app.py: worker lambat tidak menahan callback video."""
+from threading import Event
+from time import perf_counter
+from types import SimpleNamespace
 
-
-class FakeCamera:
-    mode = "SIBI"
-    closed = False
-    cap = None
-
-    def close(self):
-        self.closed = True
+import av
+import numpy as np
+from video_engine import VideoEngine
+from video_engine import draw_overlay
 
 
 if __name__ == "__main__":
-    app = AppTest.from_file(str(Path(__file__).with_name("app.py")), default_timeout=90).run()
-    assert not app.exception
-    # Resource tetap sama pada rerun tombol; read() palsu mengembalikan frame kosong.
-    import numpy as np
-    from types import SimpleNamespace
+    image = np.zeros((100, 100, 3), dtype=np.uint8)
+    landmarks = (tuple((0.2, 0.5) for _ in range(21)),)
+    draw_overlay(image, landmarks, False)
+    assert image[50, 20].any() and not image[50, 79].any()
+    image[:] = 0
+    draw_overlay(image, landmarks, True)
+    assert image[50, 79].any() and not image[50, 20].any()
+    entered, release, closed = Event(), Event(), Event()
 
-    camera = FakeCamera()
-    camera.cap = SimpleNamespace(read=lambda: (True, np.zeros((8, 8, 3), dtype=np.uint8)))
-    camera.hands = SimpleNamespace(process=lambda frame: SimpleNamespace(multi_hand_landmarks=[]))
-    camera.first_frame_ms = camera.open_ms = camera.init_ms = 0
-    camera.last, camera.since, camera.latched = "", 0, False
-    app.session_state["camera"] = camera
-    app.session_state["sentence"] = "AB"
-    app.run()
-    for label, expected in [("Spasi", "AB "), ("Hapus", "AB"), ("Reset", ""), ("Bunyikan suara", "")]:
-        next(button for button in app.button if button.label == label).click().run()
-        assert not app.exception, [e.value for e in app.exception]
-        assert app.session_state["camera"] is camera and not camera.closed
-        assert app.session_state["sentence"] == expected
-    next(button for button in app.button if button.label == "Hentikan kamera").click().run()
-    assert camera.closed and app.session_state["camera"] is None
-    print("OK: tombol mempertahankan kamera; stop menutup resource.")
+    class Hands:
+        def process(self, image):
+            entered.set()
+            assert release.wait(5)
+            return SimpleNamespace(multi_hand_landmarks=[])
+
+        def close(self):
+            closed.set()
+
+    engine = VideoEngine((None, SimpleNamespace(n_features_in_=63), None), Hands)
+    frame = av.VideoFrame.from_ndarray(np.zeros((48, 64, 3), dtype=np.uint8), format="bgr24")
+    engine.recv(frame)
+    assert entered.wait(5)
+    start = perf_counter()
+    for _ in range(60):
+        output = engine.recv(frame)
+        assert output.width == 64
+    elapsed = perf_counter() - start
+    assert elapsed < 1, elapsed
+    with engine.condition:
+        assert engine.pending is not None  # Satu slot, bukan antrean 60 frame.
+    release.set()
+    engine.close()
+    assert closed.is_set() and not engine.thread.is_alive()
+    print(f"OK: 60 callback {elapsed:.3f} detik saat worker tertahan; cleanup berhasil.")

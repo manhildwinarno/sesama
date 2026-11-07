@@ -1,15 +1,15 @@
 # Isyarat: SIBI & BISINDO
 
-Demo lokal pengenalan abjad statis berbasis MediaPipe dan SVM. Bukan penerjemah tata bahasa isyarat.
+Demo lokal pengenalan abjad statis MediaPipe + SVM. Jalankan `run_app.bat` atau `bash run_app.sh`; Jupyter tidak diperlukan. Launcher memakai ENV_001. Dependensi: `python -m pip install -r requirements.txt` dengan interpreter environment aplikasi.
 
-Jalankan `run_app.bat` di Windows atau `bash run_app.sh` di Git Bash. Launcher memakai Python ENV_001. Jupyter tidak perlu menyala. Instal dependensi dengan Python environment aplikasi: `python -m pip install -r requirements.txt`.
+## Kamera WebRTC
+Tekan START dan izinkan kamera di browser pada http://localhost:8501. Mikrofon dimatikan. Kamera sekarang milik browser, bukan OpenCV VideoCapture. Jangan jalankan dua tab kamera sekaligus.
 
-Kamera menggunakan webcam komputer server. Teks dikirim ke Google saat fitur suara dipakai; gTTS membutuhkan internet. Jangan membuka aplikasi ke jaringan publik tanpa meninjau akses dan privasi. Hanya muat artefak joblib tepercaya.
+Target kamera 640×480, 30 FPS (maksimum permintaan 60); bukan jaminan FPS. Callback video hanya meneruskan frame dengan mirror opsional. Worker inferensi memiliki satu slot frame terbaru, tidak menumpuk frame lama. Preview tidak memuat skeleton agar video tidak menunggu MediaPipe. FPS yang ditampilkan mengukur callback video masuk, bukan FPS render browser. Inferensi dan pencatatan teks memiliki frekuensi berbeda; pose ditahan 0,5 detik dan hasil diambil panel setiap 0,2 detik.
 
-Resource kamera bertahan per sesi saat tombol ditekan. Tekan Hentikan kamera sebelum meninggalkan halaman. Penutupan saat sesi browser hilang bergantung pada pembersihan resource Python; jangan mengandalkannya untuk aplikasi multiuser.
+Mirror preview terpisah dari Balik input model. Model/scaler/urutan fitur tetap sama. STOP, putus koneksi, atau pergantian mode menutup worker dan MediaPipe. ICE tanpa server eksternal ditujukan localhost; akses remote memerlukan HTTPS dan konfigurasi STUN/TURN yang ditinjau terpisah.
 
-Mirror preview tidak mengubah input model. Jika orientasi tidak cocok dataset, bandingkan opsi Balik input model. Urutan BISINDO dapat diuji lewat Tukar urutan tangan; urutan kanonis dan dukungan tangan kanan/kiri belum tervalidasi terhadap data latih.
+Suara gTTS membutuhkan internet dan mengirim teks ke Google. Hanya muat joblib tepercaya. Workaround blokir TensorFlow dipertahankan; penyebab native spesifik belum terbukti. Teks ke visual belum tersedia.
 
-Halaman menampilkan durasi webcam dibuka, frame pertama, inisialisasi MediaPipe, dan proses frame. Interval fragment 100 ms bukan klaim 30 FPS. Suara sinkron dapat menjeda frame selama permintaan jaringan, tetapi tidak menutup kamera.
-
-Uji regresi tanpa hardware: `python test_app.py`. Uji manual: mulai kamera, tekan spasi/hapus/reset/suara, pastikan feed lanjut tanpa start ulang; coba stop/start, pergantian mode, dan orientasi input. UI teks ke visual ditunda sampai aset berizin tersedia.
+## Pengujian
+`python test_app.py` menguji callback video tetap cepat ketika worker tertahan, satu slot frame terbaru, dan cleanup. `python -m py_compile app.py video_engine.py` memeriksa sintaks. AppTest Streamlit tidak mendukung runtime sesi WebRTC secara utuh; uji browser wajib: START/STOP berulang, tombol teks/audio tidak memutus video, pergantian mode, izin kamera ditolak, orientasi input, dan FPS aktual.
