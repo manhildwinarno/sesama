@@ -1,0 +1,16 @@
+/AGENTS.md
+/.agents/
+*.ipynb
+.ipynb_checkpoints/
+*.png
+/BISINDO/
+/SIBI_datasets_*/
+*.csv
+*.npy
+__pycache__/
+*.py[cod]
+.env
+.venv/
+.streamlit/secrets.toml
+*.log
+streamlit_log.txt
