@@ -37,6 +37,9 @@ if __name__ == "__main__":
     output_batch = asyncio.run(engine.recv_queued([frame] * 180 + [newest]))
     assert len(output_batch) == 1
     assert (output_batch[0].to_ndarray(format="bgr24") == 123).all()
+    engine.submit(av.VideoFrame.from_ndarray(np.zeros((720,1280,3),dtype=np.uint8), format="bgr24"))
+    with engine.condition:
+        assert engine.pending.shape == (360,640,3)
     start = perf_counter()
     for _ in range(60):
         output = engine.recv(frame)
@@ -75,12 +78,14 @@ if __name__ == "__main__":
         def snapshot(self):
             return {"candidate": "A", "confidence": 80, "fps": 30, "ms": 38}, []
 
-    with patch("video_engine.VideoEngine", UIEngine), patch(
-        "streamlit_webrtc.webrtc_streamer",
-        return_value=SimpleNamespace(state=SimpleNamespace(playing=True)),
-    ):
+        def overlay_snapshot(self):
+            return {"points": (), "stamp": 0, "flip": False}
+
+    with patch("video_engine.VideoEngine", UIEngine), patch("local_camera.camera"), patch("local_camera.CameraConnection"):
         app = AppTest.from_file("app.py", default_timeout=90).run()
         assert not app.exception, [e.value for e in app.exception]
+        app.session_state["local-camera-SIBI"] = {"playing": True}
+        app.run()
         resource = app.session_state["engine"]
         def button(label):
             return next(b for b in app.button if b.label == label)

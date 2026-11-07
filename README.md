@@ -5,11 +5,13 @@ Nama dan logo aplikasi belum ditentukan; header memakai placeholder `[Nama aplik
 Demo lokal pengenalan abjad statis MediaPipe + SVM. Jalankan `run_app.bat` atau `bash run_app.sh`; Jupyter tidak diperlukan. Launcher memakai ENV_001. Dependensi: `python -m pip install -r requirements.txt` dengan interpreter environment aplikasi.
 
 ## Kamera WebRTC
+Preview kini langsung memakai stream kamera browser, target 1280×720 pada 30 FPS. Video hanya dikirim satu arah ke Python; tidak dikirim kembali untuk preview. Worker mengecilkan input hingga maksimum 640×480 dengan rasio tetap. Kamera aktual dapat memilih resolusi lebih rendah. Overlay memakai koordinat terbaru dan dapat tertinggal dari preview. Tidak ada jaminan nol latensi. Pilihan perangkat kamera sementara mengikuti perangkat default browser.
+
 Tekan START dan izinkan kamera di browser pada http://localhost:8501. Mikrofon dimatikan. Kamera sekarang milik browser, bukan OpenCV VideoCapture. Jangan jalankan dua tab kamera sekaligus.
 
-Target kamera 640×480, 30 FPS (maksimum permintaan 60); bukan jaminan FPS. Callback video hanya meneruskan frame dengan mirror opsional. Worker inferensi memiliki satu slot frame terbaru, tidak menumpuk frame lama. Preview tidak memuat skeleton agar video tidak menunggu MediaPipe. FPS yang ditampilkan mengukur callback video masuk, bukan FPS render browser. Inferensi dan pencatatan teks memiliki frekuensi berbeda; pose ditahan 0,5 detik dan hasil diambil panel setiap 0,2 detik.
+Worker inferensi memiliki satu slot frame terbaru, tidak menumpuk frame lama. FPS yang ditampilkan mengukur frame diterima Python, bukan FPS render browser. Inferensi dan pencatatan teks memiliki frekuensi berbeda; pose ditahan 0,5 detik dan hasil diambil panel setiap 0,2 detik.
 
-Mirror preview terpisah dari Balik input model. Model/scaler/urutan fitur tetap sama. STOP, putus koneksi, atau pergantian mode menutup worker dan MediaPipe. ICE tanpa server eksternal ditujukan localhost; akses remote memerlukan HTTPS dan konfigurasi STUN/TURN yang ditinjau terpisah.
+Mirror preview terpisah dari Balik input model. Model/scaler/urutan fitur tetap sama. STOP menutup track kamera browser dan peer browser; worker inferensi tetap menunggu frame untuk START berikutnya. Pergantian mode menutup worker dan MediaPipe. ICE tanpa server eksternal ditujukan localhost; akses remote memerlukan HTTPS dan konfigurasi STUN/TURN yang ditinjau terpisah.
 
 Suara gTTS membutuhkan internet dan mengirim teks ke Google. Hanya muat joblib tepercaya. Workaround blokir TensorFlow dipertahankan; penyebab native spesifik belum terbukti. Teks ke visual belum tersedia.
 

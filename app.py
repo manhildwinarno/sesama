@@ -17,7 +17,7 @@ if not any(type(f).__name__ == "_BlockTensorFlow" for f in sys.meta_path):
 import joblib
 import mediapipe as mp
 from gtts import gTTS
-from streamlit_webrtc import webrtc_streamer
+from local_camera import camera, CameraConnection
 from video_engine import VideoEngine
 
 ROOT = Path(__file__).resolve().parent
@@ -76,6 +76,8 @@ with workspace:
     mode = st.segmented_control("Bahasa isyarat", ["SIBI", "BISINDO"], default="SIBI", key="mode") or "SIBI"
 engine = st.session_state.engine
 if engine and st.session_state.get("engine_mode") != mode:
+    if st.session_state.get("connection"):
+        st.session_state.connection.close()
     engine.close()
     st.session_state.engine = None
 
@@ -101,15 +103,25 @@ with left:
     if engine is None or not engine.running:
         engine = create_engine()
     engine.configure(flip, reverse, mirror, threshold, hold, show_landmarks)
-    ctx = webrtc_streamer(
-        key=f"camera-{mode}", queued_video_frames_callback=engine.recv_queued,
-        on_video_ended=engine.close, async_processing=True,
-        rtc_configuration={"iceServers": []},
-        media_stream_constraints={"video": {"width": {"ideal": 640}, "height": {"ideal": 480},
-                                             "frameRate": {"ideal": 30, "max": 60}}, "audio": False},
-        video_html_attrs={"autoPlay": True, "controls": False, "muted": True,
-                          "style": {"width": "100%"}},
-    )
+    if st.session_state.get("connection_engine") is not engine:
+        st.session_state.connection = CameraConnection(engine)
+        st.session_state.connection_engine = engine
+
+    @st.fragment(run_every=0.2)
+    def camera_view():
+        connection = st.session_state.connection
+        state = st.session_state.get(f"local-camera-{mode}", {})
+        try:
+            if state.get("playing") is False and st.session_state.get("camera_was_playing"):
+                connection.close()
+            st.session_state.camera_was_playing = bool(state.get("playing"))
+            answer = connection.answer_offer(state["offer"]) if state.get("offer") else None
+            camera(key=f"local-camera-{mode}", data={"answer": answer, "mirror": mirror,
+                   "show": show_landmarks, "overlay": engine.overlay_snapshot()},
+                   on_offer_change=lambda: None, on_playing_change=lambda: None)
+        except Exception as exc:
+            st.error(f"Kamera gagal: {exc}")
+    camera_view()
     st.caption("Tekan START dan izinkan kamera. Jika izin ditolak, aktifkan izin kamera pada pengaturan situs browser, lalu coba lagi.")
     with st.expander("Panduan penggunaan", icon=":material/help:"):
         st.write("1. Hadapkan telapak dan jari ke kamera dengan cahaya merata.\n2. Tahan pose sampai huruf tercatat.\n3. Lepaskan tangan sebelum mengulang huruf yang sama.")
@@ -123,7 +135,7 @@ def results():
     if events:
         st.session_state.sentence += "".join(events)
         st.session_state.audio = None
-    active = bool(ctx.state.playing and engine and engine.running)
+    active = bool(st.session_state.get(f"local-camera-{mode}", {}).get("playing") and engine and engine.running)
     candidate = result.get("candidate", "") if active else ""
     confidence = result.get("confidence", 0) if active else 0
     st.session_state.candidate = candidate

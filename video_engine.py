@@ -66,6 +66,24 @@ class VideoEngine:
             output.time_base = frame.time_base
         return output
 
+    def submit(self, frame):
+        image = frame.to_ndarray(format="bgr24")
+        height, width = image.shape[:2]
+        scale = min(1, 640 / width, 480 / height)
+        if scale < 1:
+            image = cv2.resize(image, (round(width * scale), round(height * scale)))
+        with self.lock:
+            self.times.append(monotonic())
+        with self.condition:
+            self.pending = image
+            self.condition.notify()
+
+    def overlay_snapshot(self):
+        with self.lock:
+            points, stamp, flip = self.overlay
+            return {"points": points if monotonic() - stamp <= 0.25 else (),
+                    "stamp": stamp, "flip": flip}
+
     async def recv_queued(self, frames):
         # WebRTC menguras antrean; proses hanya frame terbaru agar tidak mengejar backlog.
         return [self.recv(frames[-1])]
