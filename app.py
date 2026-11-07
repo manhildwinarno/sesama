@@ -1,267 +1,205 @@
+import io
 import sys
+from pathlib import Path
+from time import perf_counter
 
-# Mencegah crash native C++ TensorFlow di Windows saat runtime Streamlit.
-# Model proyek menggunakan SVM (scikit-learn), TensorFlow tidak dibutuhkan.
-# MediaPipe mengimpor TensorFlow hanya secara opsional untuk docgen.
+import streamlit as st
+
+# ponytail: workaround crash native ENV_001; gunakan env tanpa TensorFlow bila app membutuhkannya.
 class _BlockTensorFlow:
     def find_spec(self, fullname, path=None, target=None):
         if fullname == "tensorflow" or fullname.startswith("tensorflow."):
-            raise ModuleNotFoundError(f"tensorflow dinonaktifkan: {fullname}")
+            raise ModuleNotFoundError(fullname)
         return None
 
-if not any(isinstance(f, _BlockTensorFlow) for f in sys.meta_path):
+
+if not any(type(f).__name__ == "_BlockTensorFlow" for f in sys.meta_path):
     sys.meta_path.insert(0, _BlockTensorFlow())
 
-import streamlit as st
 import cv2
-import mediapipe as mp
-import numpy as np
-import pandas as pd
 import joblib
-import time
-import base64
+import mediapipe as mp
+import pandas as pd
 from gtts import gTTS
-import io
 
-# -------------------------------------------------------------
-# KONFIGURASI HALAMAN STREAMLIT
-# -------------------------------------------------------------
-st.set_page_config(
-    page_title="Penerjemah Bahasa Isyarat (SIBI & BISINDO)",
-    page_icon="🤟",
-    layout="wide"
-)
-
-# -------------------------------------------------------------
-# LOAD MODEL & PREPROCESSING PIPELINE
-# -------------------------------------------------------------
-@st.cache_resource
-def load_all_models():
-    models = {
-        "sibi": {
-            "model": joblib.load("models/best_model_sibi.joblib"),
-            "scaler": joblib.load("models/scaler_sibi.joblib"),
-            "encoder": joblib.load("models/le_sibi.joblib")
-        },
-        "bisindo": {
-            "model": joblib.load("models/best_model_bisindo.joblib"),
-            "scaler": joblib.load("models/scaler_bisindo.joblib"),
-            "encoder": joblib.load("models/le_bisindo.joblib")
-        }
-    }
-    return models
-
-try:
-    resources = load_all_models()
-    models_ready = True
-except Exception as e:
-    models_ready = False
-    st.error(f"Gagal memuat model: {e}. Pastikan seluruh file .joblib ada di dalam folder 'models/'!")
-
-# Inisialisasi MediaPipe Hands & Drawing
-mp_hands = mp.solutions.hands
-mp_drawing = mp.solutions.drawing_utils
-
-# Inisialisasi Session State untuk Kalimat
-if "sentence" not in st.session_state:
-    st.session_state.sentence = ""
+ROOT = Path(__file__).resolve().parent
+st.set_page_config(page_title="Isyarat · SIBI & BISINDO", layout="wide")
+st.session_state.setdefault("sentence", "")
+st.session_state.setdefault("camera", None)
+st.session_state.setdefault("audio", None)
 
 
-def scale_features(scaler, features):
-    """Transform fitur; gunakan nama kolom jika scaler dilatih dari DataFrame."""
-    if hasattr(scaler, "feature_names_in_"):
-        return scaler.transform(pd.DataFrame([features], columns=scaler.feature_names_in_))
-    return scaler.transform([features])
+@st.cache_resource(max_entries=2)
+def load_model(mode):
+    return tuple(joblib.load(ROOT / "models" / f"{name}_{mode.lower()}.joblib")
+                 for name in ("best_model", "scaler", "le"))
 
-def speak_text(text):
-    if not text.strip():
-        return
-    try:
-        tts = gTTS(text=text, lang='id')
-        fp = io.BytesIO()
-        tts.write_to_fp(fp)
-        fp.seek(0)
-        audio_bytes = fp.read()
-        b64 = base64.b64encode(audio_bytes).decode()
-        audio_html = f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}"></audio>'
-        st.markdown(audio_html, unsafe_allow_html=True)
-    except Exception as e:
-        st.error(f"Gagal membuat suara: {e}. Fitur suara membutuhkan koneksi internet.")
 
-# -------------------------------------------------------------
-# SIDEBAR PENGATURAN
-# -------------------------------------------------------------
-with st.sidebar:
-    st.title("⚙️ Pengaturan Sistem")
-    mode = st.radio(
-        "Pilih Bahasa Isyarat:",
-        ("SIBI (1 Tangan)", "BISINDO (2 Tangan)"),
-        help="SIBI menggunakan 1 tangan (63 koordinat), BISINDO menggunakan 2 tangan (126 koordinat)."
-    )
-    
-    st.divider()
-    st.subheader("Informasi Model Aktif")
-    if "SIBI" in mode:
-        st.info("**Mode:** SIBI Abjad\n\n**Algoritma:** SVM (RBF Kernel)\n\n**Akurasi Uji:** 95.92%")
-    else:
-        st.info("**Mode:** BISINDO Abjad\n\n**Algoritma:** SVM (RBF Kernel)\n\n**Akurasi Uji:** 95.95%")
-        
-    st.divider()
-    st.caption("Mata Kuliah: Pembelajaran Mesin | IPB University")
+def stop_camera():
+    camera = st.session_state.camera
+    if camera:
+        camera.close()
+        st.session_state.camera = None
 
-# -------------------------------------------------------------
-# TAMPILAN UTAMA
-# -------------------------------------------------------------
-st.title("🤟 Penerjemah Bahasa Isyarat Interaktif")
-st.markdown("Penerjemah Abjad **SIBI & BISINDO** berbasis **Machine Learning (Support Vector Machine)** dengan pelacakan *landmark* MediaPipe secara *real-time*.")
 
-col_cam, col_text = st.columns([3, 2])
-
-# Kolom Kanan: Papan Teks & Audio
-with col_text:
-    st.subheader("📝 Teks Terjemahan")
-    
-    # Text Area Teks yang Sedang Dirangkai
-    # Catatan: JANGAN memberi key pada widget ini. Jika key + value dipakai bersamaan,
-    # Streamlit memakai nilai lama dari widget state dan perubahan kalimat tidak tampil.
-    sentence_slot = st.empty()
-    sentence_slot.text_area("Kalimat:", value=st.session_state.sentence, height=120, disabled=True)
-    
-    col_btn1, col_btn2, col_btn3 = st.columns(3)
-    with col_btn1:
-        if st.button("➕ Spasi", width="stretch"):
-            st.session_state.sentence += " "
-            st.rerun()
-    with col_btn2:
-        if st.button("⌫ Hapus", width="stretch"):
-            st.session_state.sentence = st.session_state.sentence[:-1]
-            st.rerun()
-    with col_btn3:
-        if st.button("🗑️ Reset", width="stretch"):
-            st.session_state.sentence = ""
-            st.rerun()
-            
-    st.write("")
-    if st.button("🔊 Bunyikan Suara (Voice Over)", type="primary", width="stretch"):
-        if st.session_state.sentence.strip():
-            speak_text(st.session_state.sentence)
-        else:
-            st.warning("Teks masih kosong!")
-
-# Kolom Kiri: Layar Kamera
-with col_cam:
-    st.subheader("📹 Umpan Kamera Langsung")
-    start_cam = st.toggle("Aktifkan Kamera Webcam", value=False)
-    frame_placeholder = st.empty()
-    status_placeholder = st.empty()
-
-# -------------------------------------------------------------
-# PIPELINE INFERENSI KAMERA REAL-TIME
-# -------------------------------------------------------------
-if start_cam and models_ready:
-    cap = cv2.VideoCapture(0)
-
-    if not cap.isOpened():
-        st.error(
-            "Webcam tidak dapat dibuka. Pastikan kamera tidak sedang dipakai aplikasi lain "
-            "dan izin akses kamera sudah aktif."
-        )
-    else:
-        # Konfigurasi Tangan sesuai Mode
-        max_hands = 1 if "SIBI" in mode else 2
-        hands = mp_hands.Hands(
-            min_detection_confidence=0.7,
-            min_tracking_confidence=0.7,
-            max_num_hands=max_hands
-        )
-
-        current_key = "sibi" if "SIBI" in mode else "bisindo"
-        active_model = resources[current_key]["model"]
-        active_scaler = resources[current_key]["scaler"]
-        active_encoder = resources[current_key]["encoder"]
-
-        last_pred = ""
-        pred_count = 0
-        COOLDOWN_FRAMES = 12  # Jumlah frame stabil sebelum huruf otomatis tercatat
-
+class Camera:
+    """Resource lokal per sesi, bertahan ketika tombol memicu rerun."""
+    def __init__(self, mode):
+        self.cap = None
+        self.hands = None
+        self.mode = mode
+        self.last = ""
+        self.since = 0.0
+        self.latched = False
+        self.first_frame_ms = None
+        self.started = perf_counter()
         try:
-            while cap.isOpened() and start_cam:
-                ret, frame = cap.read()
-                if not ret:
-                    st.error("Gagal membaca umpan webcam!")
-                    break
+            self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW if sys.platform == "win32" else cv2.CAP_ANY)
+            if not self.cap.isOpened():
+                raise RuntimeError("Webcam tidak terbuka. Periksa izin kamera dan aplikasi lain.")
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            self.open_ms = (perf_counter() - self.started) * 1000
+        except Exception:
+            self.close()
+            raise
 
-                frame = cv2.flip(frame, 1)  # Cermin horizontal
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                results = hands.process(frame_rgb)
+    def close(self):
+        if self.cap is not None:
+            self.cap.release()
+            self.cap = None
+        if self.hands is not None:
+            self.hands.close()
+            self.hands = None
 
-                detected_char = ""
-                confidence = 0.0
+    def __del__(self):
+        self.close()
 
-                if results.multi_hand_landmarks:
-                    for hand_landmarks in results.multi_hand_landmarks:
-                        mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-                    # SIBI MODE (1 Tangan = 63 fitur)
-                    if current_key == "sibi":
-                        lms = results.multi_hand_landmarks[0]
-                        features = []
-                        for lm in lms.landmark:
-                            features.extend([lm.x, lm.y, lm.z])
+def edit_sentence(action):
+    text = st.session_state.sentence
+    st.session_state.sentence = text + " " if action == "space" else text[:-1] if action == "delete" else ""
+    st.session_state.audio = None
 
-                        # Transform & Predict
-                        feat_scaled = scale_features(active_scaler, features)
-                        pred_idx = active_model.predict(feat_scaled)[0]
-                        probs = active_model.predict_proba(feat_scaled)[0]
-                        detected_char = active_encoder.inverse_transform([pred_idx])[0]
-                        confidence = probs[pred_idx] * 100
 
-                    # BISINDO MODE (2 Tangan = 126 fitur)
-                    elif current_key == "bisindo":
-                        if len(results.multi_hand_landmarks) == 2:
-                            features = []
-                            # Ambil landmark tangan pertama dan kedua
-                            for hand_lms in results.multi_hand_landmarks:
-                                for lm in hand_lms.landmark:
-                                    features.extend([lm.x, lm.y, lm.z])
+with st.sidebar:
+    st.title("Isyarat")
+    st.caption("Abjad Indonesia · Demo lokal")
+    mode = st.segmented_control("Bahasa isyarat", ["SIBI", "BISINDO"], default="SIBI", key="mode")
+    direction = st.radio("Arah terjemahan", ["Kamera ke teks", "Teks ke visual"])
+    mirror = st.toggle("Cerminkan preview", value=True)
+    with st.expander("Pengaturan deteksi"):
+        flip_input = st.toggle("Balik input model", value=False,
+                               help="Terpisah dari preview. Bandingkan orientasi dengan dataset pelatihan.")
+        reverse_hands = st.toggle("Tukar urutan tangan BISINDO", value=False,
+                                  help="Kalibrasi urutan fitur terhadap dataset; bukan jaminan kedua tangan didukung.")
+        threshold = st.slider("Batas keyakinan (%)", 40, 95, 65)
+        hold = st.slider("Tahan pose (detik)", 0.3, 2.0, 0.8)
+    st.caption("SIBI: satu tangan · BISINDO: dua tangan")
+    st.caption("Suara memakai Google TTS dan memerlukan internet.")
 
-                            feat_scaled = scale_features(active_scaler, features)
-                            pred_idx = active_model.predict(feat_scaled)[0]
-                            probs = active_model.predict_proba(feat_scaled)[0]
-                            detected_char = active_encoder.inverse_transform([pred_idx])[0]
-                            confidence = probs[pred_idx] * 100
-                        else:
-                            status_placeholder.warning("⚠️ BISINDO membutuhkan kedua tangan di depan kamera!")
+if st.session_state.camera and (st.session_state.camera.mode != mode or direction != "Kamera ke teks"):
+    stop_camera()
 
-                    # Tampilkan Overlay Teks di Video
-                    if detected_char and confidence > 65.0:
-                        cv2.putText(frame, f"Huruf: {detected_char} ({confidence:.1f}%)", (30, 60),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 3)
+st.title("Dari isyarat menjadi kata")
+st.write("Peragakan abjad, tahan sebentar, lalu rangkai menjadi kalimat.")
+if direction == "Teks ke visual":
+    st.info("Belum tersedia. Aset abjad SIBI/BISINDO berizin dan terverifikasi masih diperlukan.")
+    st.stop()
 
-                        # Logika Debounce/Akumulasi Huruf Otomatis
-                        if detected_char == last_pred:
-                            pred_count += 1
-                            if pred_count == COOLDOWN_FRAMES:
-                                st.session_state.sentence += detected_char
-                                # Tampilkan huruf baru segera tanpa menunggu rerun
-                                sentence_slot.text_area(
-                                    "Kalimat:",
-                                    value=st.session_state.sentence,
-                                    height=120,
-                                    disabled=True,
-                                )
-                                pred_count = 0
-                        else:
-                            last_pred = detected_char
-                            pred_count = 0
-                    else:
-                        pred_count = 0
-                else:
-                    status_placeholder.info("Arahkan tangan ke kamera untuk mulai menerjemahkan.")
-                    pred_count = 0
 
-                frame_placeholder.image(frame, channels="BGR", width="stretch")
-                time.sleep(0.02)
-        finally:
-            cap.release()
-            hands.close()
+@st.fragment(run_every=0.1)
+def workspace():
+    left, right = st.columns([3, 2], gap="large")
+    with left:
+        st.subheader(f"Kamera · {mode}")
+        if st.session_state.camera:
+            st.button("Hentikan kamera", on_click=stop_camera, icon=":material/stop:")
+        elif st.button("Aktifkan kamera", type="primary", icon=":material/videocam:"):
+            try:
+                with st.spinner("Membuka webcam…"):
+                    st.session_state.camera = Camera(mode)
+            except Exception as exc:
+                st.error(str(exc))
+        preview = st.empty()
+        status = st.empty()
+        camera = st.session_state.camera
+        if camera:
+            try:
+                ok, raw = camera.cap.read()
+                if not ok:
+                    raise RuntimeError("Frame webcam tidak terbaca. Hentikan dan aktifkan kembali kamera.")
+                if camera.first_frame_ms is None:
+                    camera.first_frame_ms = (perf_counter() - camera.started) * 1000
+                # Preview pertama dikirim sebelum inisialisasi MediaPipe dan pemuatan model.
+                preview.image(cv2.flip(raw, 1) if mirror else raw, channels="BGR", width="stretch")
+                if camera.hands is None:
+                    status.info("Kamera aktif. Menyiapkan deteksi tangan…")
+                    started = perf_counter()
+                    camera.hands = mp.solutions.hands.Hands(
+                        max_num_hands=1 if mode == "SIBI" else 2,
+                        model_complexity=0, min_detection_confidence=0.5,
+                        min_tracking_confidence=0.5)
+                    camera.init_ms = (perf_counter() - started) * 1000
+                started = perf_counter()
+                frame = cv2.flip(raw, 1) if flip_input else raw.copy()
+                result = camera.hands.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+                hands = list(result.multi_hand_landmarks or [])
+                for hand in hands:
+                    mp.solutions.drawing_utils.draw_landmarks(frame, hand, mp.solutions.hands.HAND_CONNECTIONS)
+                char, confidence = "", 0.0
+                needed = 1 if mode == "SIBI" else 2
+                if len(hands) == needed:
+                    if reverse_hands and needed == 2:
+                        hands.reverse()
+                    features = [v for hand in hands for lm in hand.landmark for v in (lm.x, lm.y, lm.z)]
+                    model, scaler, encoder = load_model(mode)
+                    values = pd.DataFrame([features], columns=scaler.feature_names_in_) if hasattr(scaler, "feature_names_in_") else [features]
+                    scaled = scaler.transform(values)
+                    pred = model.predict(scaled)[0]
+                    confidence = float(model.predict_proba(scaled)[0][list(model.classes_).index(pred)]) * 100
+                    char = str(encoder.inverse_transform([pred])[0])
+                if confidence < threshold:
+                    char = ""
+                now = perf_counter()
+                if char != camera.last:
+                    camera.last, camera.since, camera.latched = char, now, False
+                if char and not camera.latched and now - camera.since >= hold:
+                    st.session_state.sentence += char
+                    st.session_state.audio = None
+                    camera.latched = True
+                progress = min((now - camera.since) / hold, 1.0) if char else 0.0
+                # Inferensi dan preview memiliki orientasi independen.
+                preview.image(cv2.flip(frame, 1) if mirror != flip_input else frame, channels="BGR", width="stretch")
+                status.info(f"{char} · {confidence:.0f}%" if char else f"Tampilkan {needed} tangan dengan pose abjad yang jelas.")
+                st.progress(progress, text="Lepaskan atau ubah pose sebelum huruf berikutnya." if camera.latched else "Tahan pose hingga stabil")
+                st.caption(f"Webcam {camera.open_ms:.0f} ms · frame pertama {camera.first_frame_ms:.0f} ms · MediaPipe {camera.init_ms:.0f} ms · proses {1000*(perf_counter()-started):.0f} ms")
+            except Exception as exc:
+                stop_camera()
+                st.error(f"Kamera dihentikan: {exc}")
+        else:
+            preview.info("Kamera belum aktif. Mulai saat tangan dan pencahayaan sudah siap.")
+    with right:
+        st.subheader("Kalimatmu")
+        st.text_area("Hasil ejaan", value=st.session_state.sentence, disabled=True, height=180)
+        with st.container(horizontal=True):
+            st.button("Spasi", on_click=edit_sentence, args=("space",))
+            st.button("Hapus", on_click=edit_sentence, args=("delete",))
+            st.button("Reset", on_click=edit_sentence, args=("reset",))
+        if st.button("Bunyikan suara", icon=":material/volume_up:", width="stretch"):
+            if not st.session_state.sentence.strip():
+                st.warning("Kalimat masih kosong.")
+            else:
+                try:
+                    with st.spinner("Membuat suara…"):
+                        audio = io.BytesIO()
+                        gTTS(st.session_state.sentence, lang="id", timeout=10).write_to_fp(audio)
+                        st.session_state.audio = audio.getvalue()
+                except Exception as exc:
+                    st.error(f"Suara gagal dibuat. Periksa internet: {exc}")
+        if st.session_state.audio:
+            st.audio(st.session_state.audio, format="audio/mp3", autoplay=True)
+        st.caption("Untuk huruf berulang, turunkan tangan sebentar lalu peragakan kembali.")
+
+
+workspace()

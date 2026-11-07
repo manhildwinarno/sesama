@@ -1,0 +1,9 @@
+streamlit==1.60.0
+gTTS==2.5.4
+mediapipe==0.10.21
+protobuf==4.25.9
+opencv-contrib-python==4.11.0.86
+numpy==1.26.4
+pandas==2.3.3
+scikit-learn==1.7.2
+joblib==1.6.0
