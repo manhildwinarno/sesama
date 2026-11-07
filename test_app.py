@@ -44,3 +44,49 @@ if __name__ == "__main__":
     engine.close()
     assert closed.is_set() and not engine.thread.is_alive()
     print(f"OK: 60 callback {elapsed:.3f} detik saat worker tertahan; cleanup berhasil.")
+
+    # Runtime WebRTC diganti stub; tes ini menguji UI, bukan koneksi kamera browser.
+    from unittest.mock import patch
+    from streamlit.testing.v1 import AppTest
+
+    class UIEngine:
+        running = True
+
+        def __init__(self, *args):
+            pass
+
+        def configure(self, *args):
+            pass
+
+        def recv(self, frame):
+            return frame
+
+        def close(self):
+            self.running = False
+
+        def snapshot(self):
+            return {"candidate": "A", "confidence": 80, "fps": 30, "ms": 38}, []
+
+    with patch("video_engine.VideoEngine", UIEngine), patch(
+        "streamlit_webrtc.webrtc_streamer",
+        return_value=SimpleNamespace(state=SimpleNamespace(playing=True)),
+    ):
+        app = AppTest.from_file("app.py", default_timeout=90).run()
+        assert not app.exception, [e.value for e in app.exception]
+        resource = app.session_state["engine"]
+        def button(label):
+            return next(b for b in app.button if b.label == label)
+        button("Catat manual").click().run()
+        assert app.session_state["sentence"] == "A"
+        button("Spasi").click().run()
+        assert app.session_state["sentence"] == "A "
+        button("Hapus").click().run()
+        assert app.session_state["sentence"] == "A"
+        with patch("gtts.gTTS") as speech:
+            button("Bunyikan teks").click().run()
+            speech.assert_called_once_with("A", lang="id", timeout=10)
+        button("Reset").click().run()
+        assert app.session_state["sentence"] == ""
+        assert app.session_state["engine"] is resource and resource.running
+        assert not app.exception, [e.value for e in app.exception]
+        print("OK: UI, catat manual, spasi/hapus/reset/audio mempertahankan engine (WebRTC stub).")

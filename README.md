@@ -1,4 +1,6 @@
-# Isyarat: SIBI & BISINDO
+# Demo SIBI & BISINDO
+
+Nama dan logo aplikasi belum ditentukan; header memakai placeholder `[Nama aplikasi]`. Workspace menampilkan kamera, huruf aktif, keyakinan, dan hasil ejaan. Orientasi serta pencatatan otomatis ada di sidebar; FPS/inferensi di Diagnostik. Tema terang/gelap diatur lewat menu Settings Streamlit. Restart server setelah perubahan konfigurasi tema.
 
 Demo lokal pengenalan abjad statis MediaPipe + SVM. Jalankan `run_app.bat` atau `bash run_app.sh`; Jupyter tidak diperlukan. Launcher memakai ENV_001. Dependensi: `python -m pip install -r requirements.txt` dengan interpreter environment aplikasi.
 

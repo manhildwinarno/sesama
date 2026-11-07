@@ -1,0 +1,20 @@
+[theme]
+font = "sans-serif"
+baseRadius = "10px"
+buttonRadius = "10px"
+headingFontSizes = ["32px", "24px", "20px", "18px", "16px", "14px"]
+headingFontWeights = [600, 600, 600, 600, 600, 600]
+
+[theme.light]
+primaryColor = "#19766D"
+backgroundColor = "#FAFAF7"
+secondaryBackgroundColor = "#EFEFEB"
+textColor = "#242C2A"
+borderColor = "#CCCFCA"
+
+[theme.dark]
+primaryColor = "#23857B"
+backgroundColor = "#181E1C"
+secondaryBackgroundColor = "#232C29"
+textColor = "#EEF1ED"
+borderColor = "#495650"
