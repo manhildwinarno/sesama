@@ -66,6 +66,10 @@ class VideoEngine:
             output.time_base = frame.time_base
         return output
 
+    async def recv_queued(self, frames):
+        # WebRTC menguras antrean; proses hanya frame terbaru agar tidak mengejar backlog.
+        return [self.recv(frames[-1])]
+
     def snapshot(self):
         with self.lock:
             result = dict(self.result)

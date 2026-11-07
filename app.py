@@ -70,7 +70,7 @@ with st.sidebar:
 
 workspace = st.container(key="workspace")
 with workspace:
-    st.caption("[Nama aplikasi] · Demo lokal")
+    st.caption("ROIN · Demo lokal")
     st.title("Isyarat tangan, hasil dalam teks")
     st.write("Peragakan abjad, tahan pose, lalu rangkai kata. Mikrofon tidak digunakan.")
     mode = st.segmented_control("Bahasa isyarat", ["SIBI", "BISINDO"], default="SIBI", key="mode") or "SIBI"
@@ -102,8 +102,8 @@ with left:
         engine = create_engine()
     engine.configure(flip, reverse, mirror, threshold, hold, show_landmarks)
     ctx = webrtc_streamer(
-        key=f"camera-{mode}", video_frame_callback=engine.recv,
-        on_video_ended=engine.close, async_processing=False,
+        key=f"camera-{mode}", queued_video_frames_callback=engine.recv_queued,
+        on_video_ended=engine.close, async_processing=True,
         rtc_configuration={"iceServers": []},
         media_stream_constraints={"video": {"width": {"ideal": 640}, "height": {"ideal": 480},
                                              "frameRate": {"ideal": 30, "max": 60}}, "audio": False},

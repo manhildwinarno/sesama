@@ -2,6 +2,7 @@
 from threading import Event
 from time import perf_counter
 from types import SimpleNamespace
+import asyncio
 
 import av
 import numpy as np
@@ -32,6 +33,10 @@ if __name__ == "__main__":
     frame = av.VideoFrame.from_ndarray(np.zeros((48, 64, 3), dtype=np.uint8), format="bgr24")
     engine.recv(frame)
     assert entered.wait(5)
+    newest = av.VideoFrame.from_ndarray(np.full((48, 64, 3), 123, dtype=np.uint8), format="bgr24")
+    output_batch = asyncio.run(engine.recv_queued([frame] * 180 + [newest]))
+    assert len(output_batch) == 1
+    assert (output_batch[0].to_ndarray(format="bgr24") == 123).all()
     start = perf_counter()
     for _ in range(60):
         output = engine.recv(frame)
@@ -60,6 +65,9 @@ if __name__ == "__main__":
 
         def recv(self, frame):
             return frame
+
+        async def recv_queued(self, frames):
+            return [frames[-1]]
 
         def close(self):
             self.running = False
