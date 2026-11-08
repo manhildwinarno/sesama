@@ -1,44 +1,42 @@
-"""python test_camera.py: WebRTC nyata tanpa webcam/browser."""
-import asyncio
-from threading import Event
+"""python test_camera.py: server frame loopback menerima JPEG tanpa browser."""
+import urllib.error
+import urllib.request
 
-import av
+import cv2
 import numpy as np
-from aiortc import RTCPeerConnection, RTCConfiguration, RTCSessionDescription, VideoStreamTrack
-from local_camera import CameraConnection
+from local_camera import FrameServer
 
 
-class Frames(VideoStreamTrack):
-    async def recv(self):
-        pts, base = await self.next_timestamp()
-        frame = av.VideoFrame.from_ndarray(np.zeros((360, 640, 3), dtype=np.uint8), format="bgr24")
-        frame.pts, frame.time_base = pts, base
-        return frame
-
-
-async def check():
-    received = Event()
-    count = 0
-    class Engine:
-        def submit(self, frame):
-            nonlocal count
-            count += 1
-            if count >= 90:
-                received.set()
-    connection = CameraConnection(Engine(), loop=asyncio.get_running_loop())
-    pc = RTCPeerConnection(RTCConfiguration(iceServers=[]))
+def post(url, token, body, origin=None):
+    request = urllib.request.Request(url, data=body, method="POST", headers={
+        "Content-Type": "image/jpeg", "X-Frame-Token": token,
+        **({"Origin": origin} if origin else {}),
+    })
     try:
-        pc.addTrack(Frames())
-        pc.getTransceivers()[0].direction = "sendonly"
-        await pc.setLocalDescription(await pc.createOffer())
-        answer = await asyncio.to_thread(connection.answer_offer, {"id": "test", "sdp": pc.localDescription.sdp})
-        await pc.setRemoteDescription(RTCSessionDescription(sdp=answer["sdp"], type="answer"))
-        assert await asyncio.to_thread(received.wait, 15), connection.error or "Tidak menerima frame"
-        print(f"OK: {count} frame WebRTC nyata diterima engine, bukan hanya koneksi tersambung.")
-    finally:
-        await pc.close()
-        await asyncio.to_thread(connection.close)
+        with urllib.request.urlopen(request, timeout=5) as response:
+            return response.status
+    except urllib.error.HTTPError as exc:
+        return exc.code
 
 
 if __name__ == "__main__":
-    asyncio.run(check())
+    class Engine:
+        def __init__(self):
+            self.image = None
+
+        def submit(self, image):
+            self.image = image
+
+    server, engine = FrameServer(), Engine()
+    server.register("token", engine)
+    ok, encoded = cv2.imencode(".jpg", np.full((360, 640, 3), 123, dtype=np.uint8))
+    assert ok
+    assert post(server.url, "token", encoded.tobytes()) == 204
+    assert engine.image is not None and engine.image.shape == (360, 640, 3)
+    assert (engine.image == 123).all()
+    assert post(server.url, "wrong", encoded.tobytes()) == 403
+    assert post(server.url, "token", encoded.tobytes(), "https://example.com") == 403
+    assert post(server.url, "token", b"not a jpeg") == 400
+    server.unregister("token")
+    assert post(server.url, "token", encoded.tobytes()) == 403
+    print("OK: JPEG loopback diterima; token, origin, dan isi rusak ditolak.")

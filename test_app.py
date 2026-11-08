@@ -1,10 +1,8 @@
-"""python test_app.py: worker lambat tidak menahan callback video."""
+"""python test_app.py: antrean frame terbaru dan regresi UI tanpa kamera nyata."""
 from threading import Event
 from time import perf_counter
 from types import SimpleNamespace
-import asyncio
 
-import av
 import numpy as np
 from video_engine import VideoEngine
 from video_engine import draw_overlay
@@ -30,30 +28,27 @@ if __name__ == "__main__":
             closed.set()
 
     engine = VideoEngine((None, SimpleNamespace(n_features_in_=63), None), Hands)
-    frame = av.VideoFrame.from_ndarray(np.zeros((48, 64, 3), dtype=np.uint8), format="bgr24")
-    engine.recv(frame)
+    frame = np.zeros((48, 64, 3), dtype=np.uint8)
+    engine.submit(frame)
     assert entered.wait(5)
-    newest = av.VideoFrame.from_ndarray(np.full((48, 64, 3), 123, dtype=np.uint8), format="bgr24")
-    output_batch = asyncio.run(engine.recv_queued([frame] * 180 + [newest]))
-    assert len(output_batch) == 1
-    assert (output_batch[0].to_ndarray(format="bgr24") == 123).all()
-    engine.submit(av.VideoFrame.from_ndarray(np.zeros((720,1280,3),dtype=np.uint8), format="bgr24"))
+    engine.submit(np.zeros((720, 1280, 3), dtype=np.uint8))
     with engine.condition:
-        assert engine.pending.shape == (360,640,3)
+        assert engine.pending.shape == (360, 640, 3)
     start = perf_counter()
     for _ in range(60):
-        output = engine.recv(frame)
-        assert output.width == 64
+        engine.submit(np.full((48, 64, 3), 123, dtype=np.uint8))
     elapsed = perf_counter() - start
     assert elapsed < 1, elapsed
     with engine.condition:
         assert engine.pending is not None  # Satu slot, bukan antrean 60 frame.
+        assert (engine.pending == 123).all()
+        assert engine.pending.shape == (48, 64, 3)
     release.set()
     engine.close()
     assert closed.is_set() and not engine.thread.is_alive()
-    print(f"OK: 60 callback {elapsed:.3f} detik saat worker tertahan; cleanup berhasil.")
+    print(f"OK: 60 submit {elapsed:.3f} detik saat worker tertahan; cleanup berhasil.")
 
-    # Runtime WebRTC diganti stub; tes ini menguji UI, bukan koneksi kamera browser.
+    # Kamera browser dan server HTTP diganti stub; ini tes UI, bukan izin kamera.
     from unittest.mock import patch
     from streamlit.testing.v1 import AppTest
 
@@ -66,27 +61,29 @@ if __name__ == "__main__":
         def configure(self, *args):
             pass
 
-        def recv(self, frame):
-            return frame
-
-        async def recv_queued(self, frames):
-            return [frames[-1]]
-
         def close(self):
             self.running = False
 
         def snapshot(self):
-            return {"candidate": "A", "confidence": 80, "fps": 30, "ms": 38}, []
+            return {"candidate": "A", "confidence": 80, "fps": 30, "ms": 38, "active": True}, []
 
         def overlay_snapshot(self):
             return {"points": (), "stamp": 0, "flip": False}
 
-    with patch("video_engine.VideoEngine", UIEngine), patch("local_camera.camera"), patch("local_camera.CameraConnection"):
+    class UIServer:
+        url = "http://127.0.0.1:9/frame"
+
+        def register(self, token, engine):
+            pass
+
+        def unregister(self, token):
+            pass
+
+    with patch("video_engine.VideoEngine", UIEngine), patch("local_camera.camera"), \
+         patch("local_camera.get_frame_server", return_value=UIServer()):
         app = AppTest.from_file("app.py", default_timeout=90).run()
         assert not app.exception, [e.value for e in app.exception]
         assert app.radio[0].value == "SIBI"
-        app.session_state["local-camera-SIBI"] = {"playing": True}
-        app.run()
         resource = app.session_state["engine"]
         def button(label):
             return next(b for b in app.button if b.label == label)
@@ -103,4 +100,4 @@ if __name__ == "__main__":
         assert app.session_state["sentence"] == ""
         assert app.session_state["engine"] is resource and resource.running
         assert not app.exception, [e.value for e in app.exception]
-        print("OK: UI, catat manual, spasi/hapus/reset/audio mempertahankan engine (WebRTC stub).")
+        print("OK: UI, catat manual, spasi/hapus/reset/audio mempertahankan engine (kamera stub).")

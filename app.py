@@ -17,7 +17,7 @@ if not any(type(f).__name__ == "_BlockTensorFlow" for f in sys.meta_path):
 import joblib
 import mediapipe as mp
 from gtts import gTTS
-from local_camera import camera, CameraConnection
+from local_camera import camera, get_frame_server, new_token
 from video_engine import VideoEngine
 
 ROOT = Path(__file__).resolve().parent
@@ -75,9 +75,10 @@ with workspace:
     st.write("Peragakan abjad, tahan pose, lalu rangkai kata. Mikrofon tidak digunakan.")
     mode = st.radio("Bahasa isyarat", ["SIBI", "BISINDO"], index=0, key="mode", horizontal=True)
 engine = st.session_state.engine
+server = get_frame_server()
+token = st.session_state.setdefault("frame_token", new_token())
 if engine and st.session_state.get("engine_mode") != mode:
-    if st.session_state.get("connection"):
-        st.session_state.connection.close()
+    server.unregister(token)
     engine.close()
     st.session_state.engine = None
 
@@ -103,26 +104,14 @@ with left:
     if engine is None or not engine.running:
         engine = create_engine()
     engine.configure(flip, reverse, mirror, threshold, hold, show_landmarks)
-    if st.session_state.get("connection_engine") is not engine:
-        st.session_state.connection = CameraConnection(engine)
-        st.session_state.connection_engine = engine
+    server.register(token, engine)
 
-    @st.fragment(run_every=0.2)
+    @st.fragment(run_every=0.15)
     def camera_view():
-        connection = st.session_state.connection
-        state = st.session_state.get(f"local-camera-{mode}", {})
-        try:
-            if state.get("stopped") != st.session_state.get("camera_stop_token"):
-                connection.close()
-                st.session_state.camera_stop_token = state.get("stopped")
-            answer = connection.answer_offer(state["offer"]) if state.get("offer") else None
-            camera(key=f"local-camera-{mode}", data={"answer": answer, "mirror": mirror,
-                   "show": show_landmarks, "overlay": engine.overlay_snapshot()},
-                   on_offer_change=lambda: None, on_playing_change=lambda: None, on_stopped_change=lambda: None)
-            if connection.error:
-                st.error(connection.error)
-        except Exception as exc:
-            st.error(f"Kamera gagal: {exc}")
+        camera(key=f"local-camera-{mode}", data={
+            "url": server.url, "token": token, "mirror": mirror,
+            "show": show_landmarks, "overlay": engine.overlay_snapshot(),
+        })
     camera_view()
     st.caption("Tekan START dan izinkan kamera. Jika izin ditolak, aktifkan izin kamera pada pengaturan situs browser, lalu coba lagi.")
     with st.expander("Panduan penggunaan", icon=":material/help:"):
@@ -130,14 +119,14 @@ with left:
         st.caption("Skor rendah? Periksa pose dan coba Balik input model di pengaturan. Mirror hanya mengubah preview.")
 
 
-@st.fragment(run_every=0.2)
+@st.fragment(run_every=0.15)
 def results():
     engine = st.session_state.engine
     result, events = engine.snapshot() if engine else ({}, [])
     if events:
         st.session_state.sentence += "".join(events)
         st.session_state.audio = None
-    active = bool(st.session_state.get(f"local-camera-{mode}", {}).get("playing") and engine and engine.running)
+    active = bool(result.get("active") and engine and engine.running)
     candidate = result.get("candidate", "") if active else ""
     confidence = result.get("confidence", 0) if active else 0
     st.session_state.candidate = candidate
@@ -146,7 +135,7 @@ def results():
         st.progress(min(1.0, max(0.0, confidence / 100)),
                     text=f"Keyakinan {confidence:.1f}% · ambang {threshold}%")
         if not active:
-            status = "Kamera belum aktif · tekan START"
+            status = "Menunggu frame kamera · tekan START"
         elif not candidate:
             status = "Menunggu pose · pastikan jumlah tangan sesuai mode"
         elif confidence < threshold:
@@ -184,8 +173,8 @@ def results():
         st.audio(st.session_state.audio, format="audio/mp3", autoplay=True)
     st.caption("Suara memerlukan internet. Teks dikirim ke Google saat Bunyikan teks ditekan.")
     with st.expander("Diagnostik", icon=":material/speed:"):
-        st.caption(f"Video masuk {result.get('fps', 0) if active else 0:.1f} FPS · inferensi {result.get('ms', 0) if active else 0:.0f} ms")
-        st.caption("FPS mengukur callback masuk, bukan render browser. Kelancaran bergantung perangkat dan cahaya.")
+        st.caption(f"Frame masuk {result.get('fps', 0) if active else 0:.1f} FPS · inferensi {result.get('ms', 0) if active else 0:.0f} ms")
+        st.caption("FPS mengukur frame yang diterima Python, bukan render preview browser. Preview memakai kamera lokal.")
 
 
 with right:

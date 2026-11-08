@@ -1,9 +1,8 @@
-"""WebRTC callback cepat; worker inferensi hanya menyimpan satu frame terbaru."""
+"""Worker inferensi satu slot frame terbaru; frame masuk dari POST kamera lokal."""
 from collections import deque
 from threading import Condition, Lock, Thread
 from time import monotonic
 
-import av
 import cv2
 import pandas as pd
 
@@ -37,6 +36,7 @@ class VideoEngine:
         self.events = deque()
         self.result = {"candidate": "", "confidence": 0.0, "error": "", "ms": 0.0}
         self.times = deque(maxlen=60)
+        self.last_frame = 0.0
         self.thread = Thread(target=self._work, daemon=True)
         self.thread.start()
 
@@ -45,35 +45,14 @@ class VideoEngine:
             self.config = (flip, reverse, mirror, threshold, hold)
             self.show_landmarks = show_landmarks
 
-    def recv(self, frame):
-        image = frame.to_ndarray(format="bgr24")
-        with self.lock:
-            mirror = self.config[2]
-            input_flip = self.config[0]
-            show = self.show_landmarks
-            landmarks, captured, overlay_flip = self.overlay
-            self.times.append(monotonic())
-        with self.condition:
-            self.pending = image
-            self.condition.notify()
-        display = cv2.flip(image, 1) if mirror else image.copy()
-        # ponytail: overlay terakhir maks 250 ms; optical flow hanya jika lag visual mengganggu.
-        if show and overlay_flip == input_flip and monotonic()-captured <= 0.25:
-            draw_overlay(display, landmarks, mirror != overlay_flip)
-        output = av.VideoFrame.from_ndarray(display, format="bgr24")
-        output.pts = frame.pts
-        if frame.time_base is not None:
-            output.time_base = frame.time_base
-        return output
-
-    def submit(self, frame):
-        image = frame.to_ndarray(format="bgr24")
+    def submit(self, image):
         height, width = image.shape[:2]
         scale = min(1, 640 / width, 480 / height)
         if scale < 1:
             image = cv2.resize(image, (round(width * scale), round(height * scale)))
         with self.lock:
             self.times.append(monotonic())
+            self.last_frame = monotonic()
         with self.condition:
             self.pending = image
             self.condition.notify()
@@ -81,18 +60,15 @@ class VideoEngine:
     def overlay_snapshot(self):
         with self.lock:
             points, stamp, flip = self.overlay
-            return {"points": points if monotonic() - stamp <= 0.25 else (),
+            return {"points": points if monotonic() - stamp <= 1.0 else (),
                     "stamp": stamp, "flip": flip}
-
-    async def recv_queued(self, frames):
-        # WebRTC menguras antrean; proses hanya frame terbaru agar tidak mengejar backlog.
-        return [self.recv(frames[-1])]
 
     def snapshot(self):
         with self.lock:
             result = dict(self.result)
             result["fps"] = ((len(self.times)-1)/(self.times[-1]-self.times[0])
                              if len(self.times) > 1 and self.times[-1] > self.times[0] else 0)
+            result["active"] = monotonic() - self.last_frame < 1.0
             events = list(self.events)
             self.events.clear()
             return result, events
