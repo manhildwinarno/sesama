@@ -1,5 +1,4 @@
 """Preview kamera lokal di browser; frame dikirim ke Python lewat HTTP loopback."""
-import json
 import secrets
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Lock, Thread
@@ -16,6 +15,10 @@ class FrameServer:
         server = self
 
         class Handler(BaseHTTPRequestHandler):
+            def setup(self):
+                super().setup()
+                self.connection.settimeout(5)
+
             def _cors(self):
                 origin = self.headers.get("Origin", "")
                 if origin.startswith(("http://localhost:", "http://127.0.0.1:")):
@@ -41,6 +44,14 @@ class FrameServer:
                 if self.path != "/frame":
                     self._reply(404, close=True)
                     return
+                try:
+                    length = int(self.headers.get("Content-Length", 0))
+                except ValueError:
+                    length = 0
+                if not 0 < length <= 4_000_000:
+                    self._reply(413, close=True)
+                    return
+                body = self.rfile.read(length)
                 origin = self.headers.get("Origin", "")
                 if origin and not origin.startswith(("http://localhost:", "http://127.0.0.1:")):
                     self._reply(403, close=True)
@@ -51,15 +62,7 @@ class FrameServer:
                 if engine is None:
                     self._reply(403, close=True)
                     return
-                try:
-                    length = int(self.headers.get("Content-Length", 0))
-                except ValueError:
-                    length = 0
-                if not 0 < length <= 4_000_000:
-                    self._reply(413, close=True)
-                    return
-                image = cv2.imdecode(np.frombuffer(self.rfile.read(length), np.uint8),
-                                     cv2.IMREAD_COLOR)
+                image = cv2.imdecode(np.frombuffer(body, np.uint8), cv2.IMREAD_COLOR)
                 if image is None:
                     self._reply(400)
                     return
@@ -116,27 +119,38 @@ export default function({parentElement, data}) {
  const button=root.querySelector('button'), status=root.querySelector('p');
  let s=root.cameraState;
  if(!s) {
-  s=root.cameraState={stream:null,busy:false,timer:null,raf:null,inflight:false,ok:false,overlay:null,show:false,frameCanvas:document.createElement('canvas')};
+  s=root.cameraState={stream:null,busy:false,timer:null,raf:null,inflight:false,ok:false,overlay:null,show:false,frameCanvas:document.createElement('canvas'),controller:null,lastPost:0,data:data};
   const post=async()=>{
-   if(!s.stream || s.inflight || document.hidden) return;
+   if(!s.stream || document.hidden) return;
+   if(s.inflight) {
+    if(performance.now()-s.lastPost<3500) return;
+    if(s.controller) s.controller.abort(); s.inflight=false;
+   }
    if(!video.videoWidth) return;
    const frame=s.frameCanvas, scale=Math.min(1,640/video.videoWidth,480/video.videoHeight);
    frame.width=Math.round(video.videoWidth*scale); frame.height=Math.round(video.videoHeight*scale);
    const ctx=frame.getContext('2d');
    ctx.drawImage(video,0,0,frame.width,frame.height);
-   s.inflight=true;
+   s.inflight=true; s.lastPost=performance.now();
+   const controller=s.controller=new AbortController();
+   const timer=setTimeout(()=>controller.abort(),2500);
    try {
     const blob=await new Promise(r=>frame.toBlob(r,'image/jpeg',0.75));
-    if(!blob || !s.stream) return;
-    const response=await fetch(data.url,{method:'POST',headers:{'Content-Type':'image/jpeg','X-Frame-Token':data.token},body:blob});
+    if(!blob || !s.stream || s.controller!==controller) return;
+    const d=s.data||data;
+    const response=await fetch(d.url,{method:'POST',headers:{'Content-Type':'image/jpeg','X-Frame-Token':d.token},body:blob,signal:controller.signal});
     if(!response.ok) throw Error(`HTTP ${response.status}`);
-    if(!s.ok) {s.ok=true;status.textContent='Preview lokal · inferensi menerima frame.';}
+    if(s.controller===controller && !s.ok) {s.ok=true;status.textContent='Preview lokal · inferensi menerima frame.';}
    } catch(e) {
-    if(s.ok) {s.ok=false;status.textContent=`Kamera aktif · inferensi terputus (${e.message}).`;}
-   } finally {s.inflight=false;}
+    if(s.stream && s.controller===controller) {
+     s.ok=false;
+     status.textContent=`Kamera aktif · inferensi terputus (${e.name==='AbortError'?'timeout':e.message}), mencoba lagi…`;
+    }
+   } finally {clearTimeout(timer);if(s.controller===controller){s.controller=null;s.inflight=false;}}
   };
   s.stop=()=>{
    if(s.timer) clearInterval(s.timer); s.timer=null;
+   if(s.controller) s.controller.abort(); s.controller=null; s.inflight=false;
    if(s.raf) cancelAnimationFrame(s.raf); s.raf=null;
    if(s.stream) s.stream.getTracks().forEach(t=>t.stop()); s.stream=null;
    video.srcObject=null; button.textContent='START'; button.disabled=false; s.busy=false; s.ok=false;
@@ -152,6 +166,7 @@ export default function({parentElement, data}) {
     status.textContent='Preview lokal · mengirim frame…';
     button.textContent='STOP'; button.disabled=false; s.busy=false;
     s.timer=setInterval(post,100);
+    if(s.raf===null) s.draw();
    } catch(e) {
     s.busy=false; button.disabled=false; status.textContent=`Kamera gagal: ${e.message}`;
    }
@@ -162,7 +177,7 @@ export default function({parentElement, data}) {
     if(canvas.width!==w || canvas.height!==h) {canvas.width=w;canvas.height=h;}
     const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,w,h);
     const o=s.overlay;
-    if(s.show && o && performance.now()-s.received<600) {
+    if(s.show && o && performance.now()-s.received<900) {
      ctx.strokeStyle='#DDEAE5';ctx.fillStyle='#63CEB5';ctx.lineWidth=2;
      for(const hand of o.points) {
       const points=hand.map(([x,y])=>[(o.flip?1-x:x)*w,y*h]);
@@ -177,7 +192,7 @@ export default function({parentElement, data}) {
   };
   s.draw();
  }
- s.show=data.show;
+ s.data=data; s.show=data.show;
  video.style.transform=canvas.style.transform=data.mirror?'scaleX(-1)':'none';
  if(data.overlay && data.overlay.stamp!==s.stamp) {s.stamp=data.overlay.stamp;s.overlay=data.overlay;s.received=performance.now();}
  return ()=>{s.busy=false;s.stop();delete root.cameraState;};

@@ -63,7 +63,7 @@ with st.sidebar:
     with st.expander("Pencatatan otomatis"):
         threshold = st.slider("Batas keyakinan (%)", 40, 95, 65,
                               help="Skor minimum sebelum huruf dicatat, bukan akurasi model.")
-        hold = st.slider("Tahan pose (detik)", 0.3, 2.0, 0.5)
+        hold = st.slider("Tahan pose (detik)", 0.2, 2.0, 0.4)
     with st.expander("Tentang demo"):
         st.write("Pengenalan abjad statis, bukan penerjemahan tata bahasa atau gerakan dinamis.")
         st.caption("Teks ke visual menunggu aset berizin dan pose terverifikasi. Rekaman suara belum tersedia.")
@@ -119,7 +119,7 @@ with left:
         st.caption("Skor rendah? Periksa pose dan coba Balik input model di pengaturan. Mirror hanya mengubah preview.")
 
 
-@st.fragment(run_every=0.15)
+@st.fragment(run_every=0.1)
 def results():
     engine = st.session_state.engine
     result, events = engine.snapshot() if engine else ({}, [])
@@ -173,7 +173,9 @@ def results():
         st.audio(st.session_state.audio, format="audio/mp3", autoplay=True)
     st.caption("Suara memerlukan internet. Teks dikirim ke Google saat Bunyikan teks ditekan.")
     with st.expander("Diagnostik", icon=":material/speed:"):
-        st.caption(f"Frame masuk {result.get('fps', 0) if active else 0:.1f} FPS · inferensi {result.get('ms', 0) if active else 0:.0f} ms")
+        ago = result.get("ago")
+        age = f"{ago:.1f} detik lalu" if ago is not None else "belum ada"
+        st.caption(f"Frame terakhir {age} · {result.get('fps', 0) if active else 0:.1f} FPS · inferensi {result.get('ms', 0) if active else 0:.0f} ms")
         st.caption("FPS mengukur frame yang diterima Python, bukan render preview browser. Preview memakai kamera lokal.")
 
 

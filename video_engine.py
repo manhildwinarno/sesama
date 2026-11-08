@@ -69,6 +69,7 @@ class VideoEngine:
             result["fps"] = ((len(self.times)-1)/(self.times[-1]-self.times[0])
                              if len(self.times) > 1 and self.times[-1] > self.times[0] else 0)
             result["active"] = monotonic() - self.last_frame < 1.0
+            result["ago"] = monotonic() - self.last_frame if self.last_frame else None
             events = list(self.events)
             self.events.clear()
             return result, events

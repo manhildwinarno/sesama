@@ -48,6 +48,28 @@ if __name__ == "__main__":
     assert closed.is_set() and not engine.thread.is_alive()
     print(f"OK: 60 submit {elapsed:.3f} detik saat worker tertahan; cleanup berhasil.")
 
+    # Overlay harus terbit walau model tidak dipanggil (2 tangan dibutuhkan, 1 terdeteksi).
+    from time import sleep
+    hand = SimpleNamespace(landmark=[SimpleNamespace(x=0.25, y=0.5) for _ in range(21)])
+
+    class OneHand:
+        def process(self, image):
+            return SimpleNamespace(multi_hand_landmarks=[hand])
+
+        def close(self):
+            pass
+
+    overlay_engine = VideoEngine((None, SimpleNamespace(n_features_in_=126), None), OneHand)
+    overlay_engine.submit(np.zeros((360, 640, 3), dtype=np.uint8))
+    for _ in range(40):
+        points = overlay_engine.overlay_snapshot()["points"]
+        if points:
+            break
+        sleep(0.05)
+    assert points and len(points[0]) == 21 and points[0][0] == (0.25, 0.5)
+    overlay_engine.close()
+    print("OK: overlay 21 titik terbit dari worker.")
+
     # Kamera browser dan server HTTP diganti stub; ini tes UI, bukan izin kamera.
     from unittest.mock import patch
     from streamlit.testing.v1 import AppTest

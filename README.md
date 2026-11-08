@@ -8,13 +8,13 @@ Demo lokal pengenalan abjad statis MediaPipe + SVM. Jalankan `run_app.bat` atau 
 
 Preview memakai stream kamera browser langsung, target 1280×720 pada 30 FPS. Preview tidak melewati Python, jadi tidak menunggu inferensi. Kamera aktual dapat memilih resolusi lebih rendah.
 
-Frame untuk inferensi diperkecil di browser hingga maksimum 640×480 (rasio tetap), dikodekan JPEG, lalu dikirim ke server HTTP loopback dengan interval maksimum sekitar 10 frame/detik. Hanya ada satu slot frame terbaru; frame lama tidak menumpuk. FPS di Diagnostik mengukur frame yang diterima Python, bukan render preview.
+Frame untuk inferensi diperkecil di browser hingga maksimum 640×480 (rasio tetap), dikodekan JPEG, lalu dikirim ke server HTTP loopback dengan interval maksimum sekitar 10 frame/detik. Fetch dibatalkan setelah 2,5 detik dan dicoba lagi; URL/token terbaru dibaca ulang saat komponen diperbarui. Hanya ada satu slot frame terbaru; frame lama tidak menumpuk. FPS di Diagnostik mengukur frame yang diterima Python, bukan render preview. Diagnostik juga menampilkan waktu frame terakhir.
 
 Server frame mengikat `127.0.0.1` pada port acak dan memakai token per sesi. Origin selain localhost dan isi non-JPEG ditolak. Ini transport lokal, bukan API publik. Akses dari perangkat lain memerlukan HTTPS, autentikasi, dan rancangan terpisah.
 
 Tekan START dan izinkan kamera di browser pada http://localhost:8501. Mikrofon dimatikan. Jangan jalankan dua tab kamera sekaligus.
 
-Pose ditahan 0,5 detik sebelum huruf dicatat; panel hasil diperbarui sekitar 0,15 detik. Mirror preview terpisah dari Balik input model. Model/scaler/urutan fitur tetap sama. STOP menghentikan kamera browser dan pengiriman frame; worker inferensi tetap menunggu frame untuk START berikutnya. Pergantian mode menutup worker dan MediaPipe. Titik tangan memakai koordinat worker terakhir, diperbarui sekitar 0,15 detik, sehingga dapat tertinggal saat tangan bergerak cepat.
+Pose ditahan 0,4 detik sebelum huruf dicatat; panel hasil diperbarui sekitar 0,1 detik. Mirror preview terpisah dari Balik input model. Model/scaler/urutan fitur tetap sama. STOP menghentikan kamera browser dan pengiriman frame; worker inferensi tetap menunggu frame untuk START berikutnya. Pergantian mode menutup worker dan MediaPipe. Titik tangan memakai koordinat worker terakhir, diperbarui sekitar 0,15 detik, sehingga dapat tertinggal saat tangan bergerak cepat.
 
 Suara gTTS membutuhkan internet dan mengirim teks ke Google. Hanya muat joblib tepercaya. Workaround blokir TensorFlow dipertahankan; penyebab native spesifik belum terbukti. Teks ke visual belum tersedia.
 
