@@ -1,5 +1,6 @@
 """Preview kamera lokal di browser; frame dikirim ke Python lewat HTTP loopback."""
 import secrets
+import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Lock, Thread
 
@@ -67,7 +68,8 @@ class FrameServer:
                     self._reply(400)
                     return
                 engine.submit(image)
-                self._reply(204)
+                overlay = engine.overlay_snapshot() if hasattr(engine, "overlay_snapshot") else None
+                self._reply(200, json.dumps({"overlay": overlay}).encode())
 
             def log_message(self, format, *args):
                 pass
@@ -140,6 +142,10 @@ export default function({parentElement, data}) {
     const d=s.data||data;
     const response=await fetch(d.url,{method:'POST',headers:{'Content-Type':'image/jpeg','X-Frame-Token':d.token},body:blob,signal:controller.signal});
     if(!response.ok) throw Error(`HTTP ${response.status}`);
+    const payload=await response.json();
+    if(s.controller===controller && payload.overlay) {
+     s.overlay=payload.overlay;s.received=performance.now();
+    }
     if(s.controller===controller && !s.ok) {s.ok=true;status.textContent='Preview lokal · inferensi menerima frame.';}
    } catch(e) {
     if(s.stream && s.controller===controller) {

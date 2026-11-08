@@ -34,7 +34,7 @@ if __name__ == "__main__":
     server.register("token", engine)
     ok, encoded = cv2.imencode(".jpg", np.full((360, 640, 3), 123, dtype=np.uint8))
     assert ok
-    assert post(server.url, "token", encoded.tobytes()) == 204
+    assert post(server.url, "token", encoded.tobytes()) == 200
     assert engine.image is not None and engine.image.shape == (360, 640, 3)
     assert (engine.image == 123).all()
     assert post(server.url, "wrong", encoded.tobytes()) == 403
@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     engine = VideoEngine((None, SimpleNamespace(n_features_in_=126), None), Hands)
     server.register("real", engine)
-    assert post(server.url, "real", encoded.tobytes()) == 204
+    assert post(server.url, "real", encoded.tobytes()) == 200
     for _ in range(40):
         result, _ = engine.snapshot()
         points = engine.overlay_snapshot()["points"]

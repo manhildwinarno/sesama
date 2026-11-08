@@ -106,20 +106,17 @@ with left:
     engine.configure(flip, reverse, mirror, threshold, hold, show_landmarks)
     server.register(token, engine)
 
-    @st.fragment(run_every=0.15)
-    def camera_view():
-        camera(key=f"local-camera-{mode}", data={
-            "url": server.url, "token": token, "mirror": mirror,
-            "show": show_landmarks, "overlay": engine.overlay_snapshot(),
-        })
-    camera_view()
+    camera(key=f"local-camera-{mode}", data={
+        "url": server.url, "token": token, "mirror": mirror,
+        "show": show_landmarks,
+    })
     st.caption("Tekan START dan izinkan kamera. Jika izin ditolak, aktifkan izin kamera pada pengaturan situs browser, lalu coba lagi.")
     with st.expander("Panduan penggunaan", icon=":material/help:"):
         st.write("1. Hadapkan telapak dan jari ke kamera dengan cahaya merata.\n2. Tahan pose sampai huruf tercatat.\n3. Lepaskan tangan sebelum mengulang huruf yang sama.")
         st.caption("Skor rendah? Periksa pose dan coba Balik input model di pengaturan. Mirror hanya mengubah preview.")
 
 
-@st.fragment(run_every=0.1)
+@st.fragment(run_every=0.3)
 def results():
     engine = st.session_state.engine
     result, events = engine.snapshot() if engine else ({}, [])
