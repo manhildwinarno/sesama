@@ -73,7 +73,7 @@ with workspace:
     st.caption("ROIN · Demo lokal")
     st.title("Isyarat tangan, hasil dalam teks")
     st.write("Peragakan abjad, tahan pose, lalu rangkai kata. Mikrofon tidak digunakan.")
-    mode = st.segmented_control("Bahasa isyarat", ["SIBI", "BISINDO"], default="SIBI", key="mode") or "SIBI"
+    mode = st.radio("Bahasa isyarat", ["SIBI", "BISINDO"], index=0, key="mode", horizontal=True)
 engine = st.session_state.engine
 if engine and st.session_state.get("engine_mode") != mode:
     if st.session_state.get("connection"):
@@ -112,13 +112,15 @@ with left:
         connection = st.session_state.connection
         state = st.session_state.get(f"local-camera-{mode}", {})
         try:
-            if state.get("playing") is False and st.session_state.get("camera_was_playing"):
+            if state.get("stopped") != st.session_state.get("camera_stop_token"):
                 connection.close()
-            st.session_state.camera_was_playing = bool(state.get("playing"))
+                st.session_state.camera_stop_token = state.get("stopped")
             answer = connection.answer_offer(state["offer"]) if state.get("offer") else None
             camera(key=f"local-camera-{mode}", data={"answer": answer, "mirror": mirror,
                    "show": show_landmarks, "overlay": engine.overlay_snapshot()},
-                   on_offer_change=lambda: None, on_playing_change=lambda: None)
+                   on_offer_change=lambda: None, on_playing_change=lambda: None, on_stopped_change=lambda: None)
+            if connection.error:
+                st.error(connection.error)
         except Exception as exc:
             st.error(f"Kamera gagal: {exc}")
     camera_view()

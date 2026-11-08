@@ -16,4 +16,5 @@ Mirror preview terpisah dari Balik input model. Model/scaler/urutan fitur tetap 
 Suara gTTS membutuhkan internet dan mengirim teks ke Google. Hanya muat joblib tepercaya. Workaround blokir TensorFlow dipertahankan; penyebab native spesifik belum terbukti. Teks ke visual belum tersedia.
 
 ## Pengujian
+`python test_camera.py` menguji negosiasi WebRTC nyata dan penerimaan minimal 90 frame sintetis tanpa browser. Ini tidak menggantikan uji izin kamera, lifecycle komponen, dan overlay di browser.
 `python test_app.py` menguji callback video tetap cepat ketika worker tertahan, satu slot frame terbaru, dan cleanup. `python -m py_compile app.py video_engine.py` memeriksa sintaks. AppTest Streamlit tidak mendukung runtime sesi WebRTC secara utuh; uji browser wajib: START/STOP berulang, tombol teks/audio tidak memutus video, pergantian mode, izin kamera ditolak, orientasi input, dan FPS aktual.

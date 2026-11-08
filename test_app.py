@@ -84,6 +84,7 @@ if __name__ == "__main__":
     with patch("video_engine.VideoEngine", UIEngine), patch("local_camera.camera"), patch("local_camera.CameraConnection"):
         app = AppTest.from_file("app.py", default_timeout=90).run()
         assert not app.exception, [e.value for e in app.exception]
+        assert app.radio[0].value == "SIBI"
         app.session_state["local-camera-SIBI"] = {"playing": True}
         app.run()
         resource = app.session_state["engine"]

@@ -1,5 +1,6 @@
 """Preview browser lokal; WebRTC hanya mengirim video untuk inferensi."""
 import asyncio
+from aiortc.mediastreams import MediaStreamError
 from concurrent.futures import TimeoutError
 
 import streamlit as st
@@ -8,12 +9,14 @@ from streamlit_webrtc.eventloop import get_global_event_loop
 
 
 class CameraConnection:
-    def __init__(self, engine):
+    def __init__(self, engine, loop=None):
         self.engine = engine
-        self.loop = get_global_event_loop()
+        self.loop = loop if loop is not None else get_global_event_loop()
         self.pc = None
         self.offer_id = None
         self.answer = None
+        self.tasks = set()
+        self.error = ""
 
     async def _close(self):
         if self.pc:
@@ -36,10 +39,15 @@ class CameraConnection:
                     while track.readyState == "live":
                         frame = await track.recv()
                         self.engine.submit(frame)
-                except Exception:
+                except MediaStreamError:
+                    pass
+                except Exception as exc:
+                    self.error = f"Penerimaan video berhenti: {type(exc).__name__}: {exc}"
                     if pc.connectionState not in ("closed", "failed"):
                         await pc.close()
-            asyncio.create_task(consume())
+            task = asyncio.create_task(consume())
+            self.tasks.add(task)
+            task.add_done_callback(self.tasks.discard)
 
         await pc.setRemoteDescription(RTCSessionDescription(sdp=offer["sdp"], type="offer"))
         await pc.setLocalDescription(await pc.createAnswer())
@@ -86,7 +94,7 @@ export default function({parentElement, data, setStateValue}) {
    s.token++; if(s.pc) s.pc.close(); s.pc=null;
    if(s.stream) s.stream.getTracks().forEach(t=>t.stop()); s.stream=null;
    video.srcObject=null; button.textContent='START'; s.busy=false; button.disabled=false;
-   status.textContent='Kamera berhenti.'; setStateValue('playing',false);
+    status.textContent='Kamera berhenti.'; setStateValue('playing',false); setStateValue('stopped',s.token);
   };
   button.onclick=async()=>{
    if(s.stream || s.busy) {s.stop(); return;}
@@ -101,7 +109,8 @@ export default function({parentElement, data, setStateValue}) {
     pc.getTransceivers().forEach(t=>t.direction='sendonly');
     pc.onconnectionstatechange=()=>{
      if(token!==s.token) return;
-     const active=pc.connectionState==='connected'; setStateValue('playing',active);
+      const active=pc.connectionState==='connected';
+      if(active || pc.connectionState==='failed' || pc.connectionState==='closed') setStateValue('playing',active);
      status.textContent=active?'Preview lokal · inferensi terhubung':`Preview lokal · koneksi ${pc.connectionState}`;
     };
     await pc.setLocalDescription(await pc.createOffer());
@@ -136,7 +145,7 @@ export default function({parentElement, data, setStateValue}) {
  if(data.answer && s.pc && data.answer.id===s.offerId && s.answer!==data.answer.id) {
   s.answer=data.answer.id;s.pc.setRemoteDescription(data.answer).catch(e=>{status.textContent=`Koneksi gagal: ${e.message}`;});
  }
- return ()=>{cancelAnimationFrame(s.raf);s.stop();delete root.cameraState;};
+ return ()=>{cancelAnimationFrame(s.raf);s.token++;if(s.pc)s.pc.close();if(s.stream)s.stream.getTracks().forEach(t=>t.stop());delete root.cameraState;};
 }
 """,
 )
