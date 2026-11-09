@@ -48,9 +48,10 @@ if __name__ == "__main__":
     assert closed.is_set() and not engine.thread.is_alive()
     print(f"OK: 60 submit {elapsed:.3f} detik saat worker tertahan; cleanup berhasil.")
 
-    # Overlay harus terbit walau model tidak dipanggil (2 tangan dibutuhkan, 1 terdeteksi).
+    # Satu tangan BISINDO tetap mencapai model dan menghasilkan overlay.
     from time import sleep
-    hand = SimpleNamespace(landmark=[SimpleNamespace(x=0.25, y=0.5) for _ in range(21)])
+    import joblib
+    hand = SimpleNamespace(landmark=[SimpleNamespace(x=0.25, y=0.5, z=0.0) for _ in range(21)])
 
     class OneHand:
         def process(self, image):
@@ -59,7 +60,9 @@ if __name__ == "__main__":
         def close(self):
             pass
 
-    overlay_engine = VideoEngine((None, SimpleNamespace(n_features_in_=126), None), OneHand)
+    artifacts = tuple(joblib.load(f"models/{name}_bisindo.joblib")
+                      for name in ("best_model", "scaler", "le"))
+    overlay_engine = VideoEngine(artifacts, OneHand)
     overlay_engine.submit(np.zeros((360, 640, 3), dtype=np.uint8))
     for _ in range(40):
         points = overlay_engine.overlay_snapshot()["points"]
@@ -69,6 +72,52 @@ if __name__ == "__main__":
     assert points and len(points[0]) == 21 and points[0][0] == (0.25, 0.5)
     overlay_engine.close()
     print("OK: overlay 21 titik terbit dari worker.")
+
+    # Periksa fitur sebelum scaler, urutan tangan, kandidat, dan event.
+    class Scaler:
+        n_features_in_ = 126
+
+        def transform(self, values):
+            np.testing.assert_array_equal(values, [expected])
+            return values
+
+    class Model:
+        classes_ = [0]
+
+        def predict(self, values):
+            return [0]
+
+        def predict_proba(self, values):
+            return [[1.0]]
+
+    encoder = SimpleNamespace(inverse_transform=lambda values: ["C"])
+    second = SimpleNamespace(landmark=[SimpleNamespace(x=0.75, y=0.4, z=-0.1) for _ in range(21)])
+    for detected, reverse, size in [([hand], False, 126), ([hand, second], False, 126),
+                                    ([hand, second], True, 126), ([], False, 126),
+                                    ([hand], False, 63)]:
+        ordered = detected[::-1] if reverse else detected
+        expected = [v for h in ordered for lm in h.landmark for v in (lm.x, lm.y, lm.z)]
+        expected += [0.0] * (size - len(expected))
+        scaler = Scaler()
+        scaler.n_features_in_ = size
+        hands = SimpleNamespace(process=lambda image: SimpleNamespace(multi_hand_landmarks=detected),
+                                close=lambda: None)
+        worker = VideoEngine((Model(), scaler, encoder), lambda: hands)
+        worker.configure(False, reverse, True, 65, 0)
+        try:
+            worker.submit(frame)
+            for _ in range(200):
+                result, events = worker.snapshot()
+                if "count" in result or result["error"]:
+                    break
+                sleep(0.05)
+            assert not result["error"], result
+            assert result.get("count") == len(detected), result
+            assert result["candidate"] == ("C" if detected else "")
+            assert events == (["C"] if detected else [])
+        finally:
+            worker.close()
+    print("OK: padding sebelum scaler, urutan dua tangan, tanpa tangan, event, dan SIBI.")
 
     # Kamera browser dan server HTTP diganti stub; ini tes UI, bukan izin kamera.
     from unittest.mock import patch

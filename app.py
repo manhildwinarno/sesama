@@ -86,7 +86,7 @@ with workspace:
     left, right = st.columns([3, 2], gap="large")
 with left:
     st.subheader(f"Kamera · {mode}")
-    st.caption("Satu tangan dalam bingkai." if mode == "SIBI" else "Dua tangan dalam bingkai; pastikan semua jari terlihat.")
+    st.caption("Satu tangan dalam bingkai." if mode == "SIBI" else "Satu atau dua tangan sesuai abjad; pastikan semua jari terlihat.")
     with st.container(horizontal=True):
         mirror = st.toggle("Cerminkan preview", value=True)
         show_landmarks = st.toggle("Titik tangan", value=False,
@@ -134,12 +134,15 @@ def results():
         if not active:
             status = "Menunggu frame kamera · tekan START"
         elif not candidate:
-            status = "Menunggu pose · pastikan jumlah tangan sesuai mode"
+            status = "Menunggu pose · belum ada input tangan yang dapat diklasifikasikan"
         elif confidence < threshold:
             status = "Skor belum cukup · sesuaikan pose"
         else:
             status = f"Tahan pose {hold:.1f} detik · lepaskan tangan untuk mengulang"
         st.caption(status)
+        if active and "count" in result:
+            st.caption(f"Terdeteksi {result['count']} tangan · " +
+                       ("model dijalankan" if candidate else "belum ada kandidat"))
     if events:
         st.caption(f"Huruf tercatat: {', '.join(events)}")
     if result.get("error"):

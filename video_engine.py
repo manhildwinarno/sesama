@@ -104,10 +104,12 @@ class VideoEngine:
                 detected = list(hands.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)).multi_hand_landmarks or [])
                 candidate, confidence = "", 0.0
                 needed = int(scaler.n_features_in_) // 63
-                if len(detected) == needed:
+                if 0 < len(detected) <= needed:
                     if reverse:
                         detected.reverse()
                     features = [v for hand in detected for lm in hand.landmark for v in (lm.x, lm.y, lm.z)]
+                    # BISINDO CSV: satu tangan pada h0; seluruh h1 nol sebelum scaler.
+                    features.extend([0.0] * (63 * needed - len(features)))
                     values = pd.DataFrame([features], columns=scaler.feature_names_in_) if hasattr(scaler, "feature_names_in_") else [features]
                     values = scaler.transform(values)
                     pred = model.predict(values)[0]

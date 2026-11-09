@@ -20,6 +20,14 @@ Suara gTTS membutuhkan internet dan mengirim teks ke Google. Hanya muat joblib t
 
 ## Pengujian
 
+### Audit BISINDO
+
+Jalankan `python audit_bisindo.py` dengan CSV lokal dan artefak model tepercaya. Dataset training berisi 7.558 baris (6.419 setelah deduplikasi). Rekonstruksi split notebook menghasilkan akurasi 95,9502% pada 1.284 baris. Validasi sumber mencapai 96,3351% pada 1.910 baris, tetapi 332 baris memiliki fitur identik dengan training. Setelah overlap persis dibuang: 95,5640% pada 1.578 baris; independensi subjek/sesi belum diketahui. Angka ini bukan akurasi webcam.
+
+CSV menyimpan input satu tangan pada 63 fitur `h0`, lalu 63 nol pada `h1`. Worker kini memakai padding tersebut sebelum StandardScaler; tanpa tangan tidak diklasifikasikan. Tes memeriksa padding, urutan dua tangan termasuk toggle pembalikan, kandidat/event, serta input SIBI. Panduan UI menerima satu atau dua tangan BISINDO dan menampilkan jumlah tangan terdeteksi.
+
+Kode ekstraksi asli BISINDO tidak tersedia di folder dataset lokal. Pada sampel dua tangan, `h0_lm0_x < h1_lm0_x` terjadi 49,81%; ini tidak mendukung asumsi slot selalu diurutkan menurut posisi horizontal. Konvensi handedness/orientasi belum terverifikasi. Uji webcam C/I/L/U/V lalu A–Z; catat jumlah tangan, kandidat, skor, orientasi input, dan toggle urutan. Training ulang dipertimbangkan setelah konvensi ekstraksi dicocokkan dan evaluasi webcam tetap buruk.
+
 Regresi browser: jalankan server di port 8511, lalu `node debug_browser.cjs` dengan Playwright tersedia melalui `NODE_PATH` (atau instalasi lokal). `APP_URL` dapat mengganti URL server. Tes memakai webcam sintetis Chromium, memeriksa aliran frame sekitar 90 detik, toggle, STOP/START, serta piksel overlay dengan koordinat simulasi. Ini bukan uji akurasi pose. Komponen kamera berada di luar fragment; overlay dikirim dalam respons POST frame. Hanya panel hasil polling setiap 0,3 detik. Restart server setelah perubahan handler HTTP agar handler lama tidak tetap hidup.
 
 `python test_camera.py` menguji server JPEG loopback: frame valid diterima, token salah, origin asing, dan isi rusak ditolak. `python test_app.py` menguji satu slot frame terbaru, resize rasio tetap, cleanup, serta regresi UI (mode default SIBI, catat manual, spasi/hapus/reset, audio, engine tetap hidup). `python -m py_compile app.py local_camera.py video_engine.py test_app.py test_camera.py` memeriksa sintaks. Uji browser tetap wajib: izin kamera, START/STOP berulang, tombol teks/audio tidak memutus kamera, pergantian mode, overlay, dan latensi nyata.

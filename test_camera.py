@@ -45,7 +45,8 @@ if __name__ == "__main__":
     print("OK: JPEG loopback diterima; token, origin, dan isi rusak ditolak.")
 
     # Jalur penuh: JPEG loopback -> VideoEngine -> status/overlay.
-    hand = SimpleNamespace(landmark=[SimpleNamespace(x=0.25, y=0.5) for _ in range(21)])
+    import joblib
+    hand = SimpleNamespace(landmark=[SimpleNamespace(x=0.25, y=0.5, z=0.0) for _ in range(21)])
 
     class Hands:
         def process(self, image):
@@ -54,7 +55,9 @@ if __name__ == "__main__":
         def close(self):
             pass
 
-    engine = VideoEngine((None, SimpleNamespace(n_features_in_=126), None), Hands)
+    artifacts = tuple(joblib.load(f"models/{name}_bisindo.joblib")
+                      for name in ("best_model", "scaler", "le"))
+    engine = VideoEngine(artifacts, Hands)
     server.register("real", engine)
     assert post(server.url, "real", encoded.tobytes()) == 200
     for _ in range(40):
