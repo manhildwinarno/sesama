@@ -100,10 +100,12 @@ if __name__ == "__main__":
         expected += [0.0] * (size - len(expected))
         scaler = Scaler()
         scaler.n_features_in_ = size
+        scaler.feature_names_in_ = [f"f{i}" for i in range(size)]
         hands = SimpleNamespace(process=lambda image: SimpleNamespace(multi_hand_landmarks=detected),
                                 close=lambda: None)
         worker = VideoEngine((Model(), scaler, encoder), lambda: hands)
         worker.configure(False, reverse, True, 65, 0)
+        worker.start_diagnostic("C")
         try:
             worker.submit(frame)
             for _ in range(200):
@@ -115,6 +117,11 @@ if __name__ == "__main__":
             assert result.get("count") == len(detected), result
             assert result["candidate"] == ("C" if detected else "")
             assert events == (["C"] if detected else [])
+            recording, rows = worker.diagnostic_snapshot()
+            assert recording and len(rows) == 1
+            assert rows[0]["label"] == "C" and rows[0]["count"] == len(detected)
+            if detected:
+                assert [rows[0][f"f{i}"] for i in range(size)] == expected
         finally:
             worker.close()
     print("OK: padding sebelum scaler, urutan dua tangan, tanpa tangan, event, dan SIBI.")
@@ -140,6 +147,12 @@ if __name__ == "__main__":
 
         def overlay_snapshot(self):
             return {"points": (), "stamp": 0, "flip": False}
+
+        def diagnostic_snapshot(self):
+            return False, []
+
+        def start_diagnostic(self, label):
+            self.label = label
 
     class UIServer:
         url = "http://127.0.0.1:9/frame"
@@ -172,3 +185,10 @@ if __name__ == "__main__":
         assert app.session_state["engine"] is resource and resource.running
         assert not app.exception, [e.value for e in app.exception]
         print("OK: UI, catat manual, spasi/hapus/reset/audio mempertahankan engine (kamera stub).")
+        app.radio[0].set_value("BISINDO").run()
+        app.selectbox[0].set_value("J").run()
+        resource = app.session_state["engine"]
+        button("Rekam 5 detik").click().run()
+        assert not app.exception and resource.label == "J"
+        assert app.session_state["engine"] is resource
+        print("OK: kontrol diagnosis BISINDO mempertahankan engine.")

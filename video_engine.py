@@ -34,6 +34,9 @@ class VideoEngine:
         self.show_landmarks = False
         self.overlay = ((), 0.0, False)
         self.events = deque()
+        self.diagnostic_rows = []
+        self.diagnostic_until = 0.0
+        self.diagnostic_label = ""
         self.result = {"candidate": "", "confidence": 0.0, "error": "", "ms": 0.0}
         self.times = deque(maxlen=60)
         self.last_frame = 0.0
@@ -44,6 +47,18 @@ class VideoEngine:
         with self.lock:
             self.config = (flip, reverse, mirror, threshold, hold)
             self.show_landmarks = show_landmarks
+
+    def start_diagnostic(self, label):
+        if label not in tuple("ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
+            raise ValueError("Label harus A–Z")
+        with self.lock:
+            self.diagnostic_rows = []
+            self.diagnostic_label = label
+            self.diagnostic_until = monotonic() + 5
+
+    def diagnostic_snapshot(self):
+        with self.lock:
+            return monotonic() < self.diagnostic_until, list(self.diagnostic_rows)
 
     def submit(self, image):
         height, width = image.shape[:2]
@@ -103,6 +118,7 @@ class VideoEngine:
                     image = cv2.flip(image, 1)
                 detected = list(hands.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)).multi_hand_landmarks or [])
                 candidate, confidence = "", 0.0
+                features = []
                 needed = int(scaler.n_features_in_) // 63
                 if 0 < len(detected) <= needed:
                     if reverse:
@@ -130,7 +146,14 @@ class VideoEngine:
                         self.events.append(char)
                         latched = True
                     self.result = dict(candidate=candidate, confidence=confidence, error="",
-                                       ms=(now-started)*1000, count=len(detected))
+                                        ms=(now-started)*1000, count=len(detected))
+                    # ponytail: maksimal 150 hasil/5 detik; ekspor sebelum rekam sesi berikutnya.
+                    if self.diagnostic_until - 5 <= captured < self.diagnostic_until and len(self.diagnostic_rows) < 150:
+                        self.diagnostic_rows.append(dict(
+                            label=self.diagnostic_label, time=captured, count=len(detected),
+                            flip=flip, reverse=reverse, mirror=config[2], threshold=threshold,
+                            hold=hold, candidate=candidate, confidence=confidence,
+                            **dict(zip(getattr(scaler, "feature_names_in_", []), features))))
         except Exception as exc:
             with self.lock:
                 self.result["error"] = str(exc)

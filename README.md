@@ -22,6 +22,10 @@ Suara gTTS membutuhkan internet dan mengirim teks ke Google. Hanya muat joblib t
 
 ### Audit BISINDO
 
+Visualisasi: `python visualize_bisindo.py`, lalu buka `bisindo_landmarks.html` di browser. Galeri menampilkan enam sampel per huruf untuk pasangan bermasalah dan pembanding; warna membedakan slot, angka menunjukkan indeks landmark. Koordinat x/y asli, bukan panduan pose terverifikasi.
+
+Diagnosis webcam: pilih BISINDO, buka **Rekam sampel diagnosis**, pilih huruf tujuan, tahan pose, tekan **Rekam 5 detik**, lalu **Unduh CSV diagnosis**. Rekam D/J/O/P/Q/R/X serta L sebagai pembanding. CSV berisi fitur sebelum scaler, kandidat/skor, jumlah tangan dan pengaturan; tanpa gambar. Unduh setiap percobaan sebelum merekam ulang atau mengganti mode. Simpan kedua variasi J sebagai file terpisah. Rekaman ini belum otomatis mengubah dataset/model.
+
 Jalankan `python audit_bisindo.py` dengan CSV lokal dan artefak model tepercaya. Dataset training berisi 7.558 baris (6.419 setelah deduplikasi). Rekonstruksi split notebook menghasilkan akurasi 95,9502% pada 1.284 baris. Validasi sumber mencapai 96,3351% pada 1.910 baris, tetapi 332 baris memiliki fitur identik dengan training. Setelah overlap persis dibuang: 95,5640% pada 1.578 baris; independensi subjek/sesi belum diketahui. Angka ini bukan akurasi webcam.
 
 CSV menyimpan input satu tangan pada 63 fitur `h0`, lalu 63 nol pada `h1`. Worker kini memakai padding tersebut sebelum StandardScaler; tanpa tangan tidak diklasifikasikan. Tes memeriksa padding, urutan dua tangan termasuk toggle pembalikan, kandidat/event, serta input SIBI. Panduan UI menerima satu atau dua tangan BISINDO dan menampilkan jumlah tangan terdeteksi.

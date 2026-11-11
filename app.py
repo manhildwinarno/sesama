@@ -15,6 +15,7 @@ if not any(type(f).__name__ == "_BlockTensorFlow" for f in sys.meta_path):
     sys.meta_path.insert(0, _BlockTensorFlow())
 
 import joblib
+import pandas as pd
 import mediapipe as mp
 from gtts import gTTS
 from local_camera import camera, get_frame_server, new_token
@@ -177,6 +178,18 @@ def results():
         age = f"{ago:.1f} detik lalu" if ago is not None else "belum ada"
         st.caption(f"Frame terakhir {age} · {result.get('fps', 0) if active else 0:.1f} FPS · inferensi {result.get('ms', 0) if active else 0:.0f} ms")
         st.caption("FPS mengukur frame yang diterima Python, bukan render preview browser. Preview memakai kamera lokal.")
+    if mode == "BISINDO":
+        with st.expander("Rekam sampel diagnosis"):
+            label = st.selectbox("Huruf yang diperagakan", list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+            st.caption("Tahan pose sebelum merekam. Simpan landmark dan prediksi selama 5 detik, tanpa gambar. Unduh sebelum merekam ulang atau mengganti mode.")
+            recording, rows = engine.diagnostic_snapshot()
+            if st.button("Rekam 5 detik", disabled=recording or not active):
+                engine.start_diagnostic(label)
+                recording, rows = True, []
+            st.caption(f"{'Merekam' if recording else 'Siap'} · {len(rows)} sampel")
+            if rows and not recording:
+                st.download_button("Unduh CSV diagnosis", pd.DataFrame(rows).to_csv(index=False),
+                                   file_name=f"bisindo_{rows[0]['label']}_diagnosis.csv", mime="text/csv")
 
 
 with right:
