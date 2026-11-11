@@ -1,4 +1,5 @@
 import io
+import math
 import sys
 from pathlib import Path
 
@@ -181,12 +182,16 @@ def results():
     if mode == "BISINDO":
         with st.expander("Rekam sampel diagnosis"):
             label = st.selectbox("Huruf yang diperagakan", list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-            st.caption("Tahan pose sebelum merekam. Simpan landmark dan prediksi selama 5 detik, tanpa gambar. Unduh sebelum merekam ulang atau mengganti mode.")
+            st.caption("Setelah ditekan, tersedia 3 detik untuk menyiapkan pose. Rekaman berlangsung 5 detik, tanpa gambar. Unduh sebelum merekam ulang atau mengganti mode.")
             recording, rows = engine.diagnostic_snapshot()
             if st.button("Rekam 5 detik", disabled=recording or not active):
                 engine.start_diagnostic(label)
                 recording, rows = True, []
-            st.caption(f"{'Merekam' if recording else 'Siap'} · {len(rows)} sampel")
+            countdown = engine.diagnostic_countdown()
+            if countdown > 0:
+                st.info(f"Siapkan pose · rekaman mulai dalam {math.ceil(countdown)} detik")
+            else:
+                st.caption(f"{'Merekam' if recording else 'Siap'} · {len(rows)} sampel")
             if rows and not recording:
                 st.download_button("Unduh CSV diagnosis", pd.DataFrame(rows).to_csv(index=False),
                                    file_name=f"bisindo_{rows[0]['label']}_diagnosis.csv", mime="text/csv")

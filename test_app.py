@@ -106,6 +106,10 @@ if __name__ == "__main__":
         worker = VideoEngine((Model(), scaler, encoder), lambda: hands)
         worker.configure(False, reverse, True, 65, 0)
         worker.start_diagnostic("C")
+        assert 2 < worker.diagnostic_countdown() <= 3
+        # Lewati waktu persiapan tanpa menunggu jam nyata.
+        with worker.lock:
+            worker.diagnostic_until -= 3
         try:
             worker.submit(frame)
             for _ in range(200):
@@ -151,6 +155,9 @@ if __name__ == "__main__":
         def diagnostic_snapshot(self):
             return False, []
 
+        def diagnostic_countdown(self):
+            return 3 if hasattr(self, "label") else 0
+
         def start_diagnostic(self, label):
             self.label = label
 
@@ -190,5 +197,6 @@ if __name__ == "__main__":
         resource = app.session_state["engine"]
         button("Rekam 5 detik").click().run()
         assert not app.exception and resource.label == "J"
+        assert any("rekaman mulai dalam 3 detik" in item.value for item in app.info)
         assert app.session_state["engine"] is resource
         print("OK: kontrol diagnosis BISINDO mempertahankan engine.")

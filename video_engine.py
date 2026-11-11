@@ -54,7 +54,11 @@ class VideoEngine:
         with self.lock:
             self.diagnostic_rows = []
             self.diagnostic_label = label
-            self.diagnostic_until = monotonic() + 5
+            self.diagnostic_until = monotonic() + 8
+
+    def diagnostic_countdown(self):
+        with self.lock:
+            return max(0, self.diagnostic_until - 5 - monotonic())
 
     def diagnostic_snapshot(self):
         with self.lock:
