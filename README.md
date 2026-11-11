@@ -20,6 +20,10 @@ Suara gTTS membutuhkan internet dan mengirim teks ke Google. Hanya muat joblib t
 
 ## Pengujian
 
+## Teks ke grafis
+
+Pilih **Teks ke grafis** pada sidebar, pilih BISINDO/SIBI, lalu masukkan teks maksimal 120 karakter. Huruf ditampilkan berurutan per kata. Aset BISINDO saat ini hanya I (`assets/BISINDO/I.jfif`) dan Q (`assets/BISINDO/17.png`); huruf lainnya serta seluruh SIBI memakai placeholder. Angka/tanda baca diberi keterangan belum didukung. Sumber grafis menurut pengguna: elemen Canva; pose belum diverifikasi secara independen. Ini ejaan abjad statis, bukan terjemahan tata bahasa. Rekaman suara belum tersedia. Berpindah ke mode grafis menutup worker kamera dan melepas registrasi server sesi.
+
 ### Audit BISINDO
 
 Visualisasi: `python visualize_bisindo.py`, lalu buka `bisindo_landmarks.html` di browser. Galeri menampilkan enam sampel per huruf untuk pasangan bermasalah dan pembanding; warna membedakan slot, angka menunjukkan indeks landmark. Koordinat x/y asli, bukan panduan pose terverifikasi.

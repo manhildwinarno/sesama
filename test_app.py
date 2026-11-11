@@ -64,7 +64,7 @@ if __name__ == "__main__":
                       for name in ("best_model", "scaler", "le"))
     overlay_engine = VideoEngine(artifacts, OneHand)
     overlay_engine.submit(np.zeros((360, 640, 3), dtype=np.uint8))
-    for _ in range(40):
+    for _ in range(200):
         points = overlay_engine.overlay_snapshot()["points"]
         if points:
             break
@@ -174,7 +174,9 @@ if __name__ == "__main__":
          patch("local_camera.get_frame_server", return_value=UIServer()):
         app = AppTest.from_file("app.py", default_timeout=90).run()
         assert not app.exception, [e.value for e in app.exception]
-        assert app.radio[0].value == "SIBI"
+        def radio(label):
+            return next(r for r in app.radio if r.label == label)
+        assert radio("Bahasa isyarat").value == "SIBI"
         resource = app.session_state["engine"]
         def button(label):
             return next(b for b in app.button if b.label == label)
@@ -192,7 +194,7 @@ if __name__ == "__main__":
         assert app.session_state["engine"] is resource and resource.running
         assert not app.exception, [e.value for e in app.exception]
         print("OK: UI, catat manual, spasi/hapus/reset/audio mempertahankan engine (kamera stub).")
-        app.radio[0].set_value("BISINDO").run()
+        radio("Bahasa isyarat").set_value("BISINDO").run()
         app.selectbox[0].set_value("J").run()
         resource = app.session_state["engine"]
         button("Rekam 5 detik").click().run()
@@ -200,3 +202,13 @@ if __name__ == "__main__":
         assert any("rekaman mulai dalam 3 detik" in item.value for item in app.info)
         assert app.session_state["engine"] is resource
         print("OK: kontrol diagnosis BISINDO mempertahankan engine.")
+        radio("Mode aplikasi").set_value("Teks ke grafis").run()
+        assert not resource.running and app.session_state["engine"] is None
+        app.text_area(key="visual_text").set_value("IQ A!").run()
+        assert not app.exception
+        assert len(app.get("image")) == 2
+        assert any(c.value == "Aset belum tersedia" for c in app.caption)
+        assert any(c.value == "Karakter belum didukung" for c in app.caption)
+        radio("Bahasa grafis").set_value("SIBI").run()
+        assert not app.exception and len(app.get("image")) == 0
+        print("OK: grafis I/Q, placeholder SIBI/huruf hilang, dan cleanup kamera.")

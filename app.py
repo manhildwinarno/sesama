@@ -56,6 +56,7 @@ def accept_candidate():
 
 
 with st.sidebar:
+    task = st.radio("Mode aplikasi", ["Isyarat ke teks", "Teks ke grafis"])
     st.subheader("Pengaturan")
     st.caption("Sesuaikan deteksi tanpa mengganti model.")
     with st.expander("Orientasi input", expanded=True):
@@ -68,7 +69,34 @@ with st.sidebar:
         hold = st.slider("Tahan pose (detik)", 0.2, 2.0, 0.4)
     with st.expander("Tentang demo"):
         st.write("Pengenalan abjad statis, bukan penerjemahan tata bahasa atau gerakan dinamis.")
-        st.caption("Teks ke visual menunggu aset berizin dan pose terverifikasi. Rekaman suara belum tersedia.")
+        st.caption("Teks ke grafis tersedia dengan aset terbatas. Rekaman suara belum tersedia.")
+
+if task == "Teks ke grafis":
+    if st.session_state.engine is not None:
+        get_frame_server().unregister(st.session_state.frame_token)
+        st.session_state.engine.close()
+        st.session_state.engine = None
+    st.title("Teks ke grafis abjad")
+    st.caption("Ejaan huruf per huruf, bukan terjemahan tata bahasa isyarat. Grafis statis tidak memperagakan gerakan.")
+    visual_mode = st.radio("Bahasa grafis", ["BISINDO", "SIBI"], horizontal=True)
+    text = st.text_area("Teks yang dieja", max_chars=120, placeholder="Contoh: IQ", key="visual_text")
+    assets = {"I": ROOT / "assets/BISINDO/I.jfif", "Q": ROOT / "assets/BISINDO/17.png"} if visual_mode == "BISINDO" else {}
+    st.caption("BISINDO: aset I dan Q tersedia; pose belum diverifikasi secara independen. Sumber aset: elemen Canva, menurut pengguna. SIBI: placeholder.")
+    if text.strip():
+        for number, word in enumerate(text.upper().split(), 1):
+            st.write(f"Kata {number}: {word}")
+            for start in range(0, len(word), 5):
+                columns = st.columns(5)
+                for column, char in zip(columns, word[start:start+5]):
+                    with column:
+                        path = assets.get(char)
+                        if path and path.is_file():
+                            st.image(str(path), caption=f"{visual_mode} · {char}", width="stretch")
+                        else:
+                            with st.container(border=True):
+                                st.subheader(char)
+                                st.caption("Aset belum tersedia" if char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" else "Karakter belum didukung")
+    st.stop()
 
 workspace = st.container(key="workspace")
 with workspace:
