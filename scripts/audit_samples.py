@@ -4,7 +4,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 
 
 if __name__ == "__main__":
@@ -18,7 +18,7 @@ if __name__ == "__main__":
              "|---|---:|---:|---:|---:|---:|---:|"]
     details = ["", "## Pertukaran slot pada frame identik", "",
                "Hanya frame dua tangan dengan fitur lengkap. Ini mengisolasi urutan slot dari perubahan pose antarrekaman.", ""]
-    for path in sorted((ROOT / "sample").glob("*.csv")):
+    for path in sorted((ROOT / "data/samples").glob("*.csv")):
         data = pd.read_csv(path)
         assert data.label.isin(list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")).all(), path
         assert set(columns).issubset(data.columns), path
@@ -54,5 +54,5 @@ if __name__ == "__main__":
             details.append(f"- ANOMALI {path.name}: {len(abnormal)} frame, count={abnormal['count'].value_counts().to_dict()}; "
                            "fitur tidak lengkap tidak dimasukkan replay.")
     report = "\n".join(lines + details) + "\n"
-    (ROOT / "SAMPLE_EVALUATION.md").write_text(report, encoding="utf-8")
+    (ROOT / "reports/SAMPLE_EVALUATION.md").write_text(report, encoding="utf-8")
     print(report)

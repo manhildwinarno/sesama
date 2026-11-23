@@ -6,7 +6,7 @@
 set -e
 cd "$(dirname "$0")" || exit 1
 
-PYTHON="/d/software/anaconda3/envs/ENV_001/python.exe"
+PYTHON="${PYTHON:-/d/software/anaconda3/envs/ENV_001/python.exe}"
 
 if [ ! -f "$PYTHON" ]; then
     echo "[ERROR] Python ENV_001 tidak ditemukan di: $PYTHON"

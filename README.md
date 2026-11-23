@@ -18,6 +18,26 @@ Pose ditahan 0,4 detik sebelum huruf dicatat; panel hasil diperbarui sekitar 0,1
 
 Suara gTTS membutuhkan internet dan mengirim teks ke Google. Hanya muat joblib tepercaya. Workaround blokir TensorFlow dipertahankan; penyebab native spesifik belum terbukti. Teks ke visual belum tersedia.
 
+## Struktur repositori
+
+| Folder | Isi |
+|---|---|
+| `notebooks/` | Inspeksi/ekstraksi, EDA/preprocessing, training/evaluasi; jalankan urut 01–03 |
+| `data/raw/` | Dataset asli lokal (tidak diunggah) |
+| `data/processed/` | CSV landmark hasil preprocessing (lokal) |
+| `data/samples/` | Sampel diagnosis webcam (lokal) |
+| `models/` | Model, scaler, dan label encoder aplikasi |
+| `assets/` | Grafis abjad aplikasi |
+| `scripts/` | Skrip audit dan visualisasi; jalankan dari root, misalnya `python scripts/audit_samples.py` |
+| `tests/` | `python tests/test_app.py`, `python tests/test_camera.py`, dan regresi browser |
+| `reports/` | Laporan audit, `figures/` hasil plot, `galleries/` visualisasi HTML |
+| `pages/` | Tempat halaman Streamlit baru; entry point tetap `app.py` |
+| `logs/` | Log lokal, tidak diunggah |
+
+Notebook menemukan root proyek dari working directory root atau subfoldernya. Path data dan output sudah mengikuti struktur di atas. Notebook training dapat menimpa artefak `models/` jika dijalankan; penataan folder tidak menjalankan training. DLL merupakan bagian environment/dependensi, bukan kode aplikasi; tidak ada DLL ditemukan pada penataan ini.
+
+Launcher menerima variabel lingkungan `PYTHON` untuk lokasi interpreter pada komputer berbeda. Default lama ENV_001 tetap tersedia; jangan memakai Python tanpa dependensi aplikasi. Aset BISINDO saat ini tersedia A–Z, SIBI masih placeholder.
+
 ## Pengujian
 
 ## Teks ke grafis

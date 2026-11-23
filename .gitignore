@@ -1,10 +1,11 @@
 /AGENTS.md
 /.agents/
-*.ipynb
 .ipynb_checkpoints/
-*.png
-/BISINDO/
-/SIBI_datasets_*/
+/data/raw/**
+/data/processed/**
+/data/samples/**
+/logs/**
+*.dll
 *.csv
 *.npy
 __pycache__/

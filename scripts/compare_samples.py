@@ -5,13 +5,13 @@ import numpy as np
 import pandas as pd
 from visualize_bisindo import skeleton
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 
 if __name__ == "__main__":
     model, scaler, encoder = [joblib.load(ROOT / "models" / f"{name}_bisindo.joblib")
                               for name in ("best_model", "scaler", "le")]
     cols = list(scaler.feature_names_in_)
-    train = pd.read_csv(ROOT / "BISINDO/Alphabet/landmarks_train.csv").drop_duplicates()
+    train = pd.read_csv(ROOT / "data/raw/BISINDO/Alphabet/landmarks_train.csv").drop_duplicates()
     raw = train[cols].to_numpy()
     scaled = scaler.transform(train[cols])
     html = ['<!doctype html><meta charset="utf-8"><title>Perbandingan sampel BISINDO</title>',
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     report = ['# Perbandingan lanjutan O/R/X', '',
               'Jarak: rerata kuadrat selisih fitur setelah StandardScaler. Lebih kecil berarti lebih dekat dalam representasi model, bukan ukuran kebenaran bahasa.', '']
     for letter, alternatives in [('O', 'OPN'), ('R', 'RH'), ('X', 'XTS')]:
-        data = pd.read_csv(ROOT / 'sample' / f'bisindo_{letter}_diagnosis.csv')
+        data = pd.read_csv(ROOT / 'data/samples' / f'bisindo_{letter}_diagnosis.csv')
         features = data[cols].to_numpy()
         assert np.isfinite(features).all()
         values = scaler.transform(data[cols])
@@ -56,7 +56,7 @@ if __name__ == "__main__":
             confidence = probabilities[np.arange(len(codes)), [indices[c] for c in codes]]*100
             report.append(f'| {shift:+.1f} | {(pred == letter).sum()}/{len(pred)} | {confidence.mean():.1f}% |')
         report.append('')
-    (ROOT / 'sample_comparison.html').write_text('\n'.join(html), encoding='utf-8')
+    (ROOT / 'reports/galleries/sample_comparison.html').write_text('\n'.join(html), encoding='utf-8')
     text = '\n'.join(report)
-    (ROOT / 'SAMPLE_COMPARISON.md').write_text(text, encoding='utf-8')
+    (ROOT / 'reports/SAMPLE_COMPARISON.md').write_text(text, encoding='utf-8')
     print(text)

@@ -80,8 +80,8 @@ if task == "Teks ke grafis":
     st.caption("Ejaan huruf per huruf, bukan terjemahan tata bahasa isyarat. Grafis statis tidak memperagakan gerakan.")
     visual_mode = st.radio("Bahasa grafis", ["BISINDO", "SIBI"], horizontal=True)
     text = st.text_area("Teks yang dieja", max_chars=120, placeholder="Contoh: IQ", key="visual_text")
-    assets = {"I": ROOT / "assets/BISINDO/I.jfif", "Q": ROOT / "assets/BISINDO/17.png"} if visual_mode == "BISINDO" else {}
-    st.caption("BISINDO: aset I dan Q tersedia; pose belum diverifikasi secara independen. Sumber aset: elemen Canva, menurut pengguna. SIBI: placeholder.")
+    assets = {letter: ROOT / "assets/BISINDO" / (f"{letter}.jpeg" if letter == "I" else f"{letter}.png") for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"} if visual_mode == "BISINDO" else {}
+    st.caption("BISINDO: aset A–Z tersedia; pose belum diverifikasi secara independen. Sumber aset: elemen Canva, menurut pengguna. SIBI: placeholder.")
     if text.strip():
         for number, word in enumerate(text.upper().split(), 1):
             st.write(f"Kata {number}: {word}")

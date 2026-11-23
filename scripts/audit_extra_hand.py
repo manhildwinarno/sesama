@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 if __name__ == "__main__":
-    root = Path(__file__).resolve().parent
+    root = Path(__file__).resolve().parents[1]
     model, scaler, encoder = [joblib.load(root / 'models' / f'{name}_bisindo.joblib')
                               for name in ('best_model', 'scaler', 'le')]
     columns = list(scaler.feature_names_in_)
@@ -13,7 +13,7 @@ if __name__ == "__main__":
               'Pengguna mengonfirmasi satu tangan dan pose ditahan pada rekaman O/R terbaru. '
               'Analisis hanya frame dengan count=2. Jarak memakai koordinat gambar ternormalisasi, bukan piksel atau jarak fisik.', '']
     for letter in 'OR':
-        data = pd.read_csv(root / 'sample' / f'bisindo_{letter}_diagnosis_terbaru.csv')
+        data = pd.read_csv(root / 'data/samples' / f'bisindo_{letter}_diagnosis_terbaru.csv')
         data = data.loc[data['count'] == 2]
         raw = data[columns].to_numpy()
         assert len(raw) and np.isfinite(raw).all()
@@ -48,5 +48,5 @@ if __name__ == "__main__":
                    '- Jangan memilih slot berdasarkan skor maksimum: pada O, slot h1 menghasilkan P yang salah dengan skor tinggi.',
                    '- Belum menerapkan deduplikasi otomatis. Perlu frame kamera tersinkron dengan dua set landmark untuk membedakan deteksi ganda, landmark keliru, dan sumber visual lain.'])
     report = '\n'.join(output) + '\n'
-    (root / 'EXTRA_HAND_EVALUATION.md').write_text(report, encoding='utf-8')
+    (root / 'reports/EXTRA_HAND_EVALUATION.md').write_text(report, encoding='utf-8')
     print(report)

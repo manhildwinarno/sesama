@@ -57,10 +57,10 @@ def detailed_evaluation(model, scaler, encoder, features, labels):
 
 
 if __name__ == "__main__":
-    root = Path(__file__).resolve().parent
+    root = Path(__file__).resolve().parents[1]
     model, scaler, encoder = [joblib.load(root / "models" / f"{name}_bisindo.joblib")
                               for name in ("best_model", "scaler", "le")]
-    raw = pd.read_csv(root / "BISINDO/Alphabet/landmarks_train.csv")
+    raw = pd.read_csv(root / "data/raw/BISINDO/Alphabet/landmarks_train.csv")
     data = raw.drop_duplicates().reset_index(drop=True)
     x = data.drop(columns="label")
     assert list(x.columns) == list(scaler.feature_names_in_)
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     print("two-hand h0 wrist x < h1 wrist x", (both.h0_lm0_x < both.h1_lm0_x).mean())
     evaluate("Reconstructed notebook test", x.iloc[test], y.iloc[test])
     detailed_evaluation(model, scaler, encoder, x.iloc[test], y.iloc[test])
-    val = pd.read_csv(root / "BISINDO/Alphabet/landmarks_val.csv")
+    val = pd.read_csv(root / "data/raw/BISINDO/Alphabet/landmarks_val.csv")
     training_rows = set(x.itertuples(index=False, name=None))
     overlap = np.array([row in training_rows for row in val.drop(columns="label").itertuples(index=False, name=None)])
     print("Validation rows with exact training-feature overlap", int(overlap.sum()))

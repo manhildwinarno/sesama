@@ -1,3 +1,9 @@
+from pathlib import Path
+import sys
+import os
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+os.chdir(ROOT)
 """python test_app.py: antrean frame terbaru dan regresi UI tanpa kamera nyata."""
 from threading import Event
 from time import perf_counter
@@ -206,8 +212,7 @@ if __name__ == "__main__":
         assert not resource.running and app.session_state["engine"] is None
         app.text_area(key="visual_text").set_value("IQ A!").run()
         assert not app.exception
-        assert len(app.get("image")) == 2
-        assert any(c.value == "Aset belum tersedia" for c in app.caption)
+        assert len(app.get("image")) == 3
         assert any(c.value == "Karakter belum didukung" for c in app.caption)
         radio("Bahasa grafis").set_value("SIBI").run()
         assert not app.exception and len(app.get("image")) == 0

@@ -1,3 +1,9 @@
+from pathlib import Path
+import sys
+import os
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+os.chdir(ROOT)
 """python test_camera.py: server frame loopback sampai worker inferensi nyata."""
 import urllib.error
 import urllib.request
