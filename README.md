@@ -36,7 +36,20 @@ Suara gTTS membutuhkan internet dan mengirim teks ke Google. Hanya muat joblib t
 
 Notebook menemukan root proyek dari working directory root atau subfoldernya. Path data dan output sudah mengikuti struktur di atas. Notebook training dapat menimpa artefak `models/` jika dijalankan; penataan folder tidak menjalankan training. DLL merupakan bagian environment/dependensi, bukan kode aplikasi; tidak ada DLL ditemukan pada penataan ini.
 
-Launcher menerima variabel lingkungan `PYTHON` untuk lokasi interpreter pada komputer berbeda. Default lama ENV_001 tetap tersedia; jangan memakai Python tanpa dependensi aplikasi. Aset BISINDO saat ini tersedia A–Z, SIBI masih placeholder.
+Launcher memakai `.venv/Scripts/python.exe` secara default; variabel lingkungan `PYTHON` dapat mengganti lokasi interpreter. Aset BISINDO saat ini tersedia A–Z, SIBI masih placeholder.
+
+### Environment Windows
+
+Gunakan Python 3.11 untuk dependensi yang dipin proyek. Python 3.14 boleh tetap terpasang untuk proyek lain.
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip check
+.\run_app.bat
+```
+
+Git Bash: `bash run_app.sh`. Aktivasi environment tidak wajib karena launcher memakai interpreter `.venv` langsung. Environment ini untuk aplikasi dan tes; notebook training dapat membutuhkan paket tambahan yang tidak termasuk requirements aplikasi.
 
 ## Pengujian
 

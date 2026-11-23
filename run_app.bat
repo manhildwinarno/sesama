@@ -2,12 +2,14 @@
 setlocal
 cd /d "%~dp0"
 
-if not defined PYTHON set "PYTHON=D:\software\anaconda3\envs\ENV_001\python.exe"
+if not defined PYTHON set "PYTHON=%~dp0.venv\Scripts\python.exe"
 if not exist "%~dp0logs" mkdir "%~dp0logs"
 set "LOGFILE=%~dp0logs\streamlit_log.txt"
 
 if not exist "%PYTHON%" (
-    echo [ERROR] Python ENV_001 tidak ditemukan di: %PYTHON%
+    echo [ERROR] Python proyek tidak ditemukan di: %PYTHON%
+    echo Buat environment: py -3.11 -m venv .venv
+    echo Instal dependensi: .venv\Scripts\python.exe -m pip install -r requirements.txt
     pause
     exit /b 1
 )

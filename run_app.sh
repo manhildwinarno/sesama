@@ -6,10 +6,12 @@
 set -e
 cd "$(dirname "$0")" || exit 1
 
-PYTHON="${PYTHON:-/d/software/anaconda3/envs/ENV_001/python.exe}"
+PYTHON="${PYTHON:-.venv/Scripts/python.exe}"
 
 if [ ! -f "$PYTHON" ]; then
-    echo "[ERROR] Python ENV_001 tidak ditemukan di: $PYTHON"
+    echo "[ERROR] Python proyek tidak ditemukan di: $PYTHON"
+    echo "Buat environment: py -3.11 -m venv .venv"
+    echo "Instal dependensi: .venv/Scripts/python.exe -m pip install -r requirements.txt"
     exit 1
 fi
 
