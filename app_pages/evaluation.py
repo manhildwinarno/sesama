@@ -7,6 +7,7 @@ import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
 report = json.loads((ROOT / "assets/benchmark.json").read_text(encoding="utf-8"))
+analysis = json.loads((ROOT / "assets/evaluation.json").read_text(encoding="utf-8"))
 
 with st.container(key="landing"):
     with st.container(horizontal=True, horizontal_alignment="distribute", key="evaluation-nav"):
@@ -57,11 +58,44 @@ All three used `random_state=42`. These are the compared configurations, not an 
 """)
 
         st.header("Inside the SIBI evaluation")
-        st.markdown("Original figures from the project reports. The available training report contains a SIBI confusion matrix; no BISINDO confusion matrix is supplied here.")
-        st.image(str(ROOT / "reports/figures/confusion_matrix_sibi.png"), caption="SVM (RBF), SIBI test split. Rows: actual letters. Columns: predicted letters. Counts, not percentages.", width="stretch")
+        st.markdown("SVM predictions from the reconstructed notebook test split: **235 correct out of 245**. Rows show actual letters; columns show predictions. Hover over a cell for counts. No BISINDO confusion matrix is presented here.")
+        matrix = analysis["sibi_confusion"]
+        cells = pd.DataFrame([{"Actual": actual, "Predicted": predicted, "Count": matrix["counts"][i][j],
+                               "Row share": matrix["counts"][i][j] / sum(matrix["counts"][i])}
+                              for i, actual in enumerate(matrix["labels"]) for j, predicted in enumerate(matrix["labels"])])
+        normalized = st.toggle("Normalize by actual letter", value=False)
+        show_values = st.toggle("Show nonzero cell values", value=False, help="Keep off on small screens; hover or tap cells for exact values.")
+        value = "Row share" if normalized else "Count"
+        heatmap = alt.Chart(cells).mark_rect(stroke="#f5f7f6", strokeWidth=.5).encode(
+            x=alt.X("Predicted:O", sort=matrix["labels"], axis=alt.Axis(labelAngle=0, labelFontSize=8, labelOverlap=False)),
+            y=alt.Y("Actual:O", sort=matrix["labels"], axis=alt.Axis(labelFontSize=8, labelOverlap=False)),
+            color=alt.Color(f"{value}:Q", scale=alt.Scale(domain=[0, 1 if normalized else int(cells["Count"].max())], range=["#eef2f5", "#526f8c"]),
+                            legend=alt.Legend(format=".0%" if normalized else "d", orient="bottom", gradientLength=140)),
+            tooltip=["Actual:O", "Predicted:O", alt.Tooltip("Count:Q", format="d"), alt.Tooltip("Row share:Q", format=".1%")],
+        )
+        numbers = heatmap.mark_text(fontSize=9).encode(text=alt.condition(alt.datum.Count > 0, alt.Text(f"{value}:Q", format=".0%" if normalized else "d"), alt.value("")),
+            color=alt.condition(alt.datum.Count >= 5, alt.value("white"), alt.value("#242522")))
+        st.altair_chart(((heatmap + numbers) if show_values else heatmap).properties(height=400), width="stretch", key="confusion-chart")
         with st.expander("Supporting analysis"):
-            st.image(str(ROOT / "reports/figures/feature_importance_sibi.png"), caption="Random Forest feature importance, SIBI. This explains that tree model's feature use, not SVM feature importance or a causal explanation of SVM's lead.", width="stretch")
-            st.image(str(ROOT / "reports/figures/distribusi_kelas_abjad.png"), caption="Class distribution from EDA. This is dataset context, not a ranking of model performance or necessarily the post-deduplication test distribution.", width="stretch")
+            st.subheader("Random Forest feature importance")
+            st.markdown("SIBI, top 10 features. Recomputed with notebook settings; accuracy and weighted F1 match the saved RF scores to six decimals. This is **not SVM feature importance**, nor a causal explanation of its lead.")
+            importance = pd.DataFrame(analysis["rf_importance"]["features"])
+            st.altair_chart(alt.Chart(importance).mark_bar(color="#b3a4cb", cornerRadiusEnd=4).encode(
+                x=alt.X("importance:Q", title="Feature importance", scale=alt.Scale(zero=True)),
+                y=alt.Y("feature:N", sort="-x", title=None),
+                tooltip=[alt.Tooltip("feature:N", title="Feature"), alt.Tooltip("importance:Q", title="Importance", format=".4f")],
+            ).properties(height=300), width="stretch", key="importance-chart")
+            st.subheader("Samples per letter")
+            st.markdown("Source CSV rows **before deduplication**, matching the EDA stage. Dataset context, not test-set class counts or model performance.")
+            counts = pd.DataFrame([{"Dataset": d["dataset"], "Letter": letter, "Samples": count}
+                                   for d in analysis["class_distributions"] for letter, count in d["counts"].items()])
+            for name, column in zip(["SIBI", "BISINDO"], st.columns(2, gap="large")):
+                with column:
+                    st.markdown(f"**{name}**")
+                    st.altair_chart(alt.Chart(counts[counts["Dataset"] == name]).mark_bar(color="#9cb8cf" if name == "SIBI" else "#b3a4cb").encode(
+                        x=alt.X("Letter:O", axis=alt.Axis(labelAngle=0, labelFontSize=8)),
+                        y=alt.Y("Samples:Q", scale=alt.Scale(zero=True)), tooltip=["Letter:O", "Samples:Q"],
+                    ).properties(height=220), width="stretch")
 
         st.header("Read the limits")
         st.markdown("""
@@ -74,6 +108,8 @@ All three used `random_state=42`. These are the compared configurations, not an 
         st.markdown("""
 - `notebooks/03_pemodelan_dan_evaluasi.ipynb`: saved model scores, split procedure, settings, SVM selection, confusion matrix, and Random Forest feature importance.
 - `notebooks/02_eda_dan_preprocessing.ipynb` and `reports/figures/`: supporting dataset analysis and original figures.
-- `assets/benchmark.json`: six-decimal transcription of saved comparison scores. Charts use these values; no retraining runs when this page opens. Displayed percentages rounded to two decimals.
+- `assets/benchmark.json`: six-decimal transcription of saved comparison scores; displayed percentages rounded to two decimals.
+- `assets/evaluation.json`: numeric chart export from local CSVs and trusted model artifacts. `scripts/export_evaluation.py` reconstructs the split, verifies SVM and refitted RF scores, and records source hashes. No fitting or inference runs when this page opens.
 """)
-        st.page_link("app_pages/home.py", label="Back to home", icon=":material/arrow_back:")
+        with st.container(key="evaluation-back"):
+            st.page_link("app_pages/home.py", label="Back to home", icon=":material/arrow_back:")

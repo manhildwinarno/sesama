@@ -56,6 +56,8 @@ body:has(.st-key-landing) [data-testid="stMainBlockContainer"] {
 .st-key-evaluation-content h1 {font-size:clamp(36px,5vw,64px); text-align:left; max-width:none; letter-spacing:-2px; margin:0;}
 .st-key-evaluation-content h2 {font-size:28px; letter-spacing:-1px; margin-top:28px;}
 .st-key-evaluation-content h3 {font-size:20px;}
+/* Edit bottom CTA spacing here; no Python change needed. */
+.st-key-evaluation-back {margin-top:48px; margin-bottom:24px;}
 .st-key-evaluation-content [data-testid="stMarkdownContainer"] p,.st-key-evaluation-content [data-testid="stMarkdownContainer"] li {line-height:1.75;}
 @media(max-width:767px) {.st-key-evaluation-content [data-testid="stButtonGroup"] [role="radiogroup"] {flex-wrap:wrap;} .st-key-evaluation-content [data-testid="stButtonGroup"] button[role="radio"] {flex-basis:calc(50% - 4px);}}
 .how-section {border-top:1px solid #24252214; padding:64px 0; scroll-margin-top:24px;}
