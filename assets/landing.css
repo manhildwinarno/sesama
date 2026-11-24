@@ -40,6 +40,36 @@ body:has(.st-key-landing) [data-testid="stMainBlockContainer"] {
 .step-number {display:block; font-size:13px; color:#687168; font-variant-numeric:tabular-nums; margin-bottom:28px;}
 .how-steps h3 {font-size:21px; font-weight:600; letter-spacing:-.6px; margin:0 0 12px; padding:0;}
 .how-steps p {font-size:15px; line-height:1.7; color:#5d655f; margin:0; max-width:300px;}
+/* ponytail: CSS illustration, not live controls; revise timing here, no video dependency. */
+.alphabet-motion {position:relative; padding-bottom:32px; margin-bottom:24px;}
+.motion-stage {position:relative; aspect-ratio:16/10; display:flex; align-items:center; justify-content:center; border-radius:18px; background:linear-gradient(135deg,#dce7f0,#e7e0f0); overflow:hidden;}
+.motion-settings {width:82%; max-width:290px;}
+.motion-label {display:block; font-size:12px; color:#515a54; margin-bottom:12px;}
+.motion-options {position:relative; display:grid; grid-template-columns:1fr 1fr; border-radius:12px; padding:5px; background:#f1f2f4;}
+.motion-options > span:not(.motion-selection) {z-index:1; padding:12px 0; text-align:center; font-size:14px; color:#242522;}
+.motion-selection {position:absolute; inset:5px auto 5px 5px; width:calc(50% - 5px); background:#fff; border-radius:9px; box-shadow:0 2px 6px #2425220a; animation:alphabet-select 6s infinite;}
+.motion-cursor {position:absolute; width:24px; height:28px; left:30%; top:70%; filter:drop-shadow(0 2px 2px #24252230); animation:alphabet-cursor 6s infinite;}
+.motion-cursor::before {content:""; display:block; width:100%; height:100%; background:#242522; clip-path:polygon(12% 7%,12% 82%,33% 64%,50% 93%,67% 86%,50% 57%,83% 57%);}
+.alphabet-motion input {position:absolute; bottom:5px; left:0; width:14px; height:14px; margin:0; accent-color:#242522;}
+.alphabet-motion label {position:absolute; bottom:2px; left:22px; font-size:11px; line-height:20px; color:#5d655f; cursor:pointer;}
+.alphabet-motion input:checked ~ .motion-stage * {animation-play-state:paused;}
+@keyframes alphabet-select {
+ 0%,24%,80%,100% {transform:translateX(0);}
+ 30%,74% {transform:translateX(100%);}
+}
+@keyframes alphabet-cursor {
+ 0%,8%,100% {left:30%; top:70%; transform:scale(1);}
+ 24%,34% {left:66%; top:56%; transform:scale(1);}
+ 27% {left:66%; top:56%; transform:scale(.85);}
+ 44%,58% {left:73%; top:70%; transform:scale(1);}
+ 74%,84% {left:32%; top:56%; transform:scale(1);}
+ 77% {left:32%; top:56%; transform:scale(.85);}
+}
+@media(prefers-reduced-motion:reduce) {
+ .motion-selection {animation:none;}
+ .motion-cursor,.alphabet-motion input,.alphabet-motion label {display:none;}
+ .alphabet-motion {padding-bottom:0;}
+}
 .how-bottom {display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px;}
 .how-bottom p {font-size:12px; color:#687168; margin:0;}
 .how-bottom a {font-size:13px; color:#5d655f; text-decoration:none; text-underline-offset:4px;}

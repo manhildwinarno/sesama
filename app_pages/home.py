@@ -24,7 +24,17 @@ with st.container(key="landing"):
         <section class="how-section" id="how-it-works" aria-labelledby="how-title">
           <div class="how-heading"><h2 id="how-title">From signs to words.</h2><p>Three steps. Your own pace.</p></div>
           <ol class="how-steps">
-            <li><span class="step-number" aria-hidden="true">01</span><h3>Choose your alphabet.</h3><p>Open the workspace and select SIBI or BISINDO.</p></li>
+            <li><span class="step-number" aria-hidden="true">01</span>
+              <div class="alphabet-motion">
+                <input type="checkbox" id="pause-alphabet"><label for="pause-alphabet">Pause animation</label>
+                <div class="motion-stage" role="img" aria-label="Illustration: cursor switches the sign language selection between SIBI and BISINDO.">
+                  <div class="motion-settings" aria-hidden="true"><span class="motion-label">Sign language</span>
+                    <div class="motion-options"><span class="motion-selection"></span><span>SIBI</span><span>BISINDO</span></div>
+                  </div>
+                  <span class="motion-cursor" aria-hidden="true"></span>
+                </div>
+              </div>
+              <h3>Choose your alphabet.</h3><p>Open the workspace and select SIBI or BISINDO.</p></li>
             <li><span class="step-number" aria-hidden="true">02</span><h3>Make a sign.</h3><p>Start the camera. Keep your hand sign steady and in view.</p></li>
             <li><span class="step-number" aria-hidden="true">03</span><h3>Build your words.</h3><p>Check each recognized letter, then add spaces or edit your text.</p></li>
           </ol>

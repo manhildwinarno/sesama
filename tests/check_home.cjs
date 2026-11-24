@@ -40,7 +40,24 @@ const assert = require('node:assert/strict');
       const steps=await page.locator('.how-steps li').all();
       const boxes=await Promise.all(steps.map(step=>step.boundingBox()));
       assert(width<768 ? boxes[1].y>boxes[0].y : Math.abs(boxes[1].y-boxes[0].y)<1,'Steps must stack only on mobile');
+      const selection=page.locator('.motion-selection');
+      assert(await page.locator('.motion-cursor').isVisible(),'Animated cursor must survive HTML sanitization');
+      assert.equal(await selection.evaluate(el=>el.getAnimations().length),1);
+      const positions=await selection.evaluate(el=>{
+       const animation=el.getAnimations()[0];
+       animation.pause();
+       animation.currentTime=0; const first=getComputedStyle(el).transform;
+       animation.currentTime=2400; const second=getComputedStyle(el).transform;
+       animation.play(); return [first,second];
+      });
+      assert.notEqual(positions[0],positions[1],'Selection must switch between alphabets');
+      await page.getByLabel('Pause animation',{exact:true}).check();
+      assert.equal(await selection.evaluate(el=>getComputedStyle(el).animationPlayState),'paused');
       await page.screenshot({path:`logs/design/how-it-works-${width}.png`});
+      await page.emulateMedia({reducedMotion:'reduce'});
+      assert.equal(await selection.evaluate(el=>el.getAnimations().length),0);
+      assert(await page.locator('.motion-cursor').isHidden());
+      await page.emulateMedia({reducedMotion:'no-preference'});
      }
     }
     await page.locator('.how-bottom a').click();
