@@ -79,6 +79,7 @@ div:has(> [data-testid="stMain"]) {padding-right:16px; box-sizing:border-box;}
 .st-key-settings-card [data-testid="stWidgetLabel"] p {font-size:12px;}
 .st-key-preview-options [data-testid="stWidgetLabel"] p {font-size:12px;}
 .st-key-camera-stage {gap:8px;}
+.st-key-visual-input [data-testid="InputInstructions"] {position:static; margin-top:6px; max-width:100%; font-size:11px; text-align:right;}
 .st-key-workspace > [data-testid="stVerticalBlock"] {gap:12px;}
 .st-key-settings-card, .st-key-prediction, .st-key-transcript {padding:14px;}
 .st-key-settings-card [data-testid="stVerticalBlock"], .st-key-prediction [data-testid="stVerticalBlock"] {gap:12px;}

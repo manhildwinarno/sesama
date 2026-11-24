@@ -2,7 +2,7 @@ from pathlib import Path
 
 import streamlit as st
 
-st.set_page_config(page_title="kata · Sign language workspace", page_icon=":material/sign_language:", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="sesama", page_icon=":material/sign_language:", layout="wide", initial_sidebar_state="expanded")
 st.html(Path(__file__).resolve().parent / "assets/workspace.css")
 for key, value in {"sentence": "", "audio": None, "engine": None, "candidate": ""}.items():
     st.session_state.setdefault(key, value)
@@ -30,5 +30,5 @@ if page.title != "Sign to text" and st.session_state.engine is not None:
     st.session_state.engine = None
 
 with st.container(key="brand"):
-    st.markdown("**kata**", text_alignment="center")
+    st.markdown("**sesama**", text_alignment="center")
 page.run()
