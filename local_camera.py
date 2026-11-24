@@ -105,16 +105,25 @@ def new_token():
 
 camera = st.components.v2.component(
     "local_camera",
-    html="""<div class="view"><video autoplay muted playsinline></video><canvas></canvas></div>
-<button type="button">START</button><p role="status">Kamera belum aktif.</p>""",
+    html="""<div class="view"><div class="empty"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="12" height="12" rx="3"/><path d="m15 10 6-3v10l-6-3M3 3l18 18"/></svg><strong>Kamera belum aktif</strong><span>Nyalakan kamera untuk mulai mengeja</span></div><video autoplay muted playsinline></video><canvas></canvas><span class="label">Kamera lokal</span></div>
+<div class="dock"><button type="button" aria-label="START" aria-pressed="false" title="Nyalakan kamera"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="12" height="12" rx="3"/><path d="m15 10 6-3v10l-6-3"/></svg></button><span class="dock-label">Nyalakan kamera</span></div><p role="status">Kamera belum aktif.</p>""",
     css="""
-.view {position:relative; aspect-ratio:16/9; background:#242522; border-radius:18px; overflow:hidden; margin-bottom:16px;}
+.view {position:relative; aspect-ratio:4/3; background:#292b28; border-radius:28px; overflow:hidden; margin-bottom:18px;}
 video,canvas {position:absolute; width:100%; height:100%; object-fit:contain;}
 canvas {pointer-events:none;}
-button {padding:12px 28px; background:#20211F; color:white; border:0; border-radius:999px; cursor:pointer; font:600 14px var(--st-font, sans-serif);}
+.empty {position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px; color:#f4f5ef; font:14px var(--st-font,sans-serif);}
+.empty svg {width:42px; height:42px; stroke:#dce2d5; fill:none; stroke-width:1.4;}
+.empty strong {font-size:20px; font-weight:500;}
+.empty span {color:#c3c8bc;}
+.label {position:absolute; left:24px; bottom:22px; color:white; font:12px var(--st-font,sans-serif); background:#0005; padding:7px 12px; border-radius:99px;}
+.dock {display:flex; align-items:center; justify-content:center; gap:14px; width:fit-content; margin:0 auto; border-radius:99px; background:#111; padding:8px 22px 8px 8px; color:#fff; font:13px var(--st-font,sans-serif);}
+button {display:grid; place-items:center; width:52px; height:52px; background:#383a36; color:white; border:0; border-radius:50%; cursor:pointer;}
+button svg {width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:1.7;}
+button[aria-pressed="true"] {background:#e34c43;}
 button:focus-visible {outline:3px solid #6b7555; outline-offset:3px;}
 button:disabled {opacity:.6; cursor:wait;}
-p {font:14px sans-serif; color:var(--st-text-color);}
+p {font:12px var(--st-font,sans-serif); color:var(--st-text-color); text-align:center;}
+@media(max-width:600px) {.view {aspect-ratio:4/3; border-radius:22px;}}
 """,
     js="""
 export default function({parentElement, data}) {
@@ -160,7 +169,7 @@ export default function({parentElement, data}) {
    if(s.controller) s.controller.abort(); s.controller=null; s.inflight=false;
    if(s.raf) cancelAnimationFrame(s.raf); s.raf=null;
    if(s.stream) s.stream.getTracks().forEach(t=>t.stop()); s.stream=null;
-   video.srcObject=null; button.textContent='START'; button.disabled=false; s.busy=false; s.ok=false;
+    video.srcObject=null; button.setAttribute('aria-label','START'); button.setAttribute('aria-pressed','false'); button.title='Nyalakan kamera'; root.querySelector('.dock-label').textContent='Nyalakan kamera'; root.querySelector('.empty').style.display='flex'; button.disabled=false; s.busy=false; s.ok=false;
    status.textContent='Kamera berhenti.';
   };
   button.onclick=async()=>{
@@ -171,7 +180,7 @@ export default function({parentElement, data}) {
     if(!s.busy) {stream.getTracks().forEach(t=>t.stop());return;}
     s.stream=stream; video.srcObject=stream; await video.play();
     status.textContent='Preview lokal · mengirim frame…';
-    button.textContent='STOP'; button.disabled=false; s.busy=false;
+    button.setAttribute('aria-label','STOP'); button.setAttribute('aria-pressed','true'); button.title='Matikan kamera'; root.querySelector('.dock-label').textContent='Matikan kamera'; root.querySelector('.empty').style.display='none'; button.disabled=false; s.busy=false;
     s.timer=setInterval(post,100);
     if(s.raf===null) s.draw();
    } catch(e) {

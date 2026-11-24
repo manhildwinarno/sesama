@@ -1,29 +1,46 @@
 /* ponytail: shell memakai DOM Streamlit 1.60; periksa selector setelah upgrade. */
 .stApp {
-  background: radial-gradient(ellipse at 8% 8%, #dceba9 0%, transparent 48%),
-              radial-gradient(ellipse at 96% 88%, #f3d69e 0%, transparent 48%),
-              linear-gradient(125deg, #eaf0d7, #f5d8c9 72%, #f4e3af);
+  background: radial-gradient(ellipse at 5% 2%, #b5d681 0%, transparent 52%),
+              radial-gradient(ellipse at 72% 0%, #e78e70 0%, transparent 58%),
+              linear-gradient(135deg, #c6d38b, #d4b479 60%, #c2d68c);
 }
 [data-testid="stHeader"] {background: transparent;}
 [data-testid="stMain"] {
-  margin: 28px 28px 28px 0; border: 1px solid #ffffffcc;
-  border-radius: 30px; background: #f8f9f6ed;
+  margin: 28px 24px 28px 0; border: 1px solid #ffffffcc;
+  border-radius: 34px; background: #f5f7f6f5;
   box-shadow: 0 18px 60px #363b2510;
 }
-[data-testid="stMainBlockContainer"] {padding: 2.5rem 2rem 3rem;}
+[data-testid="stMainBlockContainer"] {padding: 1.5rem 1.2rem 2rem;}
 [data-testid="stSidebar"] {
   background: #f8f9f4e8; border: 1px solid #ffffffb3;
   border-radius: 30px; margin: 28px 12px 28px 24px;
-  min-width: 225px; max-width: 245px;
 }
-[data-testid="stSidebarNavLink"][aria-current="page"] {background: #20211f; color: #fff; border-radius: 12px;}
-[data-testid="stSidebarNavLink"][aria-current="page"] span {color: #fff;}
+[data-testid="stSidebarUserContent"] {padding: 20px 0; width:100%;}
+.st-key-nav-compact [data-testid="stPageLink"] a *,
+.st-key-nav-expanded [data-testid="stPageLink"] a * {color:inherit;}
+[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] > div {padding-inline:0;}
+[data-testid="stSidebar"] [data-testid="stSidebarContent"] {padding-inline:0;}
+.st-key-nav-toggle button {min-height:48px; border:0; background:#fff; width:52px; margin-inline:auto;}
+.st-key-nav-toggle button [data-testid="stMarkdownContainer"] {position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap;}
+.st-key-nav-compact {align-items:center;}
+.st-key-nav-toggle button [data-testid="stIconMaterial"] {font-size:24px;}
+.st-key-nav-compact [data-testid="stPageLink"] a {width:52px; height:52px; border-radius:50%; background:#fff; justify-content:center; padding:0; margin-bottom:12px;}
+.st-key-nav-compact [data-testid="stPageLink"] a, .st-key-nav-expanded [data-testid="stPageLink"] a {color:#242522;}
+.st-key-nav-compact [data-testid="stPageLink"] a p {font-size:0;}
+.st-key-nav-compact [data-testid="stPageLink"] a span[data-testid="stIconMaterial"] {font-size:22px;}
+.st-key-nav-active [data-testid="stPageLink"] a {background:#111 !important; color:#fff !important;}
+.st-key-nav-expanded [data-testid="stPageLink"] a {padding:14px; border-radius:18px; margin-bottom:8px;}
 .st-key-workspace {max-width: 1320px; margin-inline: auto;}
 .st-key-workspace h1 {letter-spacing: -0.045em;}
-.st-key-camera-card, .st-key-prediction, .st-key-transcript,
+.st-key-settings-card, .st-key-prediction, .st-key-transcript,
 .st-key-visual-input, .st-key-visual-output {
-  background: #fff; border-radius: 22px; box-shadow: 0 6px 24px #24251f05;
+  background: #fff; border-radius: 28px; box-shadow: 0 6px 24px #24251f05;
 }
+.st-key-settings-card h3, .st-key-transcript h3 {font-size:18px;}
+.st-key-settings-card [data-testid="stWidgetLabel"] p {font-size:12px;}
+.st-key-preview-options [data-testid="stWidgetLabel"] p {font-size:12px;}
+.st-key-camera-stage {gap:8px;}
+.st-key-workspace > [data-testid="stVerticalBlock"] {gap:18px;}
 .st-key-prediction [data-testid="stMetricValue"] {font-size: 3.5rem; line-height: 1.15;}
 .st-key-transcript textarea:disabled {color: var(--st-text-color); -webkit-text-fill-color: var(--st-text-color); opacity: 1;}
 @media (max-width: 767px) {

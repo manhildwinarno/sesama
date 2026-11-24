@@ -44,21 +44,27 @@ def accept_candidate():
 
 workspace = st.container(key="workspace")
 with workspace:
-    st.caption("RUANG BELAJAR / ISYARAT KE TEKS")
-    heading, language = st.columns([3, 1], vertical_alignment="center")
-    with heading:
-        st.title("Dari isyarat, menjadi kata.")
-        st.caption("Peragakan abjad, tahan pose, lalu rangkai kata. Mikrofon tidak digunakan.")
-    with language:
+    with st.container(horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"):
+        st.markdown("**kata.** / Isyarat ke teks")
+        st.caption("Abjad statis · Demo lokal · Mikrofon mati")
+    settings, center, right = st.columns([1.05, 3.2, 1.4], gap="small")
+with settings:
+    with st.container(border=True, key="settings-card"):
+        st.subheader("Pengenalan")
         mode = st.segmented_control("Bahasa isyarat", ["SIBI", "BISINDO"], default="SIBI", required=True, key="mode", persist_state="session")
-    with st.expander("Pengaturan pencatatan", icon=":material/tune:"):
+        st.caption("Satu tangan." if mode == "SIBI" else "Satu atau dua tangan sesuai abjad.")
+        st.space("small")
         threshold = st.slider("Batas keyakinan (%)", 40, 95, 65, key="threshold", persist_state="session",
                               help="Skor minimum sebelum huruf dicatat, bukan akurasi model.")
         hold = st.slider("Tahan pose (detik)", 0.2, 2.0, 0.4, key="hold", persist_state="session")
+        st.caption("Tahan pose hingga tercatat. Lepaskan tangan sebelum mengulang huruf sama.")
     with st.expander("Pengaturan lanjutan", icon=":material/settings:"):
         flip = st.toggle("Balik input model", key="flip", persist_state="session", help="Mengubah gambar inferensi, bukan preview. Bukan koreksi otomatis.")
         reverse = st.toggle("Tukar urutan tangan BISINDO", disabled=mode != "BISINDO", key="reverse", persist_state="session")
         st.caption("Urutan harus cocok data pelatihan. Perubahan bisa memperburuk hasil.")
+    with st.expander("Panduan singkat", icon=":material/help:"):
+        st.write("Hadapkan tangan ke kamera dengan cahaya merata. Pastikan seluruh jari terlihat.")
+        st.caption("Mirror hanya mengubah preview. Bukan penerjemah tata bahasa atau gerakan dinamis.")
 engine = st.session_state.engine
 server = get_frame_server()
 token = st.session_state.setdefault("frame_token", new_token())
@@ -67,12 +73,9 @@ if engine and st.session_state.get("engine_mode") != mode:
     engine.close()
     st.session_state.engine = None
 
-with workspace:
-    left, right = st.columns([3, 2], gap="large")
-with left, st.container(border=True, key="camera-card"):
-    st.subheader(f"Kamera · {mode}")
-    st.caption("Satu tangan dalam bingkai." if mode == "SIBI" else "Satu atau dua tangan sesuai abjad; pastikan semua jari terlihat.")
-    with st.container(horizontal=True):
+with center, st.container(key="camera-stage"):
+    preview = st.container()
+    with st.container(horizontal=True, horizontal_alignment="center", key="preview-options"):
         mirror = st.toggle("Cerminkan preview", value=True)
         show_landmarks = st.toggle("Titik tangan", value=False,
                                    help="Hasil pelacakan terbaru, bukan bukti prediksi benar. Bisa sedikit tertinggal saat bergerak.")
@@ -91,14 +94,12 @@ with left, st.container(border=True, key="camera-card"):
     engine.configure(flip, reverse if mode == "BISINDO" else False, mirror, threshold, hold, show_landmarks)
     server.register(token, engine)
 
-    camera(key=f"local-camera-{mode}", data={
-        "url": server.url, "token": token, "mirror": mirror,
-        "show": show_landmarks,
-    })
-    st.caption("Tekan START dan izinkan kamera. Jika izin ditolak, aktifkan izin kamera pada pengaturan situs browser, lalu coba lagi.")
-    with st.expander("Panduan penggunaan", icon=":material/help:"):
-        st.write("1. Hadapkan telapak dan jari ke kamera dengan cahaya merata.\n2. Tahan pose sampai huruf tercatat.\n3. Lepaskan tangan sebelum mengulang huruf yang sama.")
-        st.caption("Skor rendah? Periksa pose dan coba Balik input model di pengaturan. Mirror hanya mengubah preview.")
+    with preview:
+        camera(key=f"local-camera-{mode}", data={
+            "url": server.url, "token": token, "mirror": mirror,
+            "show": show_landmarks,
+        })
+    st.caption("Preview kamera lokal · Izinkan kamera saat diminta browser.")
 
 
 @st.fragment(run_every=0.3)
