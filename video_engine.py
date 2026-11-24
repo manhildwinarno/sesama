@@ -1,4 +1,4 @@
-"""Worker inferensi satu slot frame terbaru; frame masuk dari POST kamera lokal."""
+"""Worker inferensi satu slot frame terbaru, terpisah per sesi."""
 from collections import deque
 from threading import Condition, Lock, Thread
 from time import monotonic
@@ -109,7 +109,10 @@ class VideoEngine:
             last, since, latched = "", 0.0, False
             while True:
                 with self.condition:
-                    self.condition.wait_for(lambda: self.pending is not None or not self.running)
+                    ready = self.condition.wait_for(lambda: self.pending is not None or not self.running, timeout=60)
+                    if not ready:
+                        self.running = False
+                        return
                     if not self.running:
                         return
                     image, self.pending = self.pending, None

@@ -26,9 +26,6 @@ with st.sidebar:
 
 # Halaman non-kamera melepas worker dan registrasi token sesi.
 if page.title != "Sign to text" and st.session_state.engine is not None:
-    from local_camera import get_frame_server
-
-    get_frame_server().unregister(st.session_state.frame_token)
     st.session_state.engine.close()
     st.session_state.engine = None
 

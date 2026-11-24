@@ -9,6 +9,6 @@ with st.container(key="workspace"), st.container(border=True):
         st.write("Spell A–Z, up to 120 characters. Press Enter to apply; spaces separate words. Browse longer text eight letters per page. SIBI and BISINDO assets are supplied by the contributor; poses and licensing have not been independently verified.")
         st.write("Static graphics do not demonstrate movement. This app recognizes static alphabet poses, not sign-language grammar or dynamic gestures. Speech input is not available.")
     with st.expander("Privacy and limitations"):
-        st.write("Microphone is disabled. Camera preview stays in your browser; JPEG frames go to the local inference server. Diagnostic CSV files contain landmarks and predictions, not images.")
-        st.write("Read aloud requires internet and sends transcript to Google through gTTS. Pronunciation is Indonesian. Use localhost; remote access requires a separate security design.")
+        st.write("Microphone is disabled. Preview stays in your browser; JPEG frames are sent over the Streamlit connection to the app server for inference. Images are not saved by the app. Diagnostic CSV files contain landmarks and predictions, not images.")
+        st.write("Read aloud requires internet and sends transcript to Google through gTTS. Pronunciation is Indonesian. Use HTTPS for hosted access. Free hosting can sleep or limit resources; avoid sensitive content.")
         st.write("Reported evaluation accuracy: SIBI 95.92%, BISINDO 95.95%. Not guaranteed webcam accuracy. Pose, position, lighting, and training alignment affect results.")

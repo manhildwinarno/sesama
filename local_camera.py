@@ -1,12 +1,38 @@
-"""Preview kamera lokal di browser; frame dikirim ke Python lewat HTTP loopback."""
+"""Browser preview and bounded Streamlit frames; legacy loopback retained for tests."""
 import secrets
 import json
+import base64
+import binascii
+import io
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Lock, Thread
 
 import cv2
 import numpy as np
 import streamlit as st
+from PIL import Image, UnidentifiedImageError
+
+
+def decode_frame(payload):
+    """Validate bounded browser JPEG before passing pixels to inference."""
+    if not isinstance(payload, str) or len(payload) > 600_000:
+        raise ValueError("Frame exceeds size limit")
+    try:
+        raw = base64.b64decode(payload, validate=True)
+    except (ValueError, binascii.Error) as exc:
+        raise ValueError("Invalid frame encoding") from exc
+    if not raw.startswith(b"\xff\xd8"):
+        raise ValueError("Expected JPEG frame")
+    try:
+        with Image.open(io.BytesIO(raw)) as header:
+            if header.format != "JPEG" or not (1 <= header.width <= 640 and 1 <= header.height <= 480):
+                raise ValueError("Invalid frame dimensions")
+    except (UnidentifiedImageError, OSError) as exc:
+        raise ValueError("Invalid JPEG frame") from exc
+    image = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
+    if image is None or not (1 <= image.shape[0] <= 480 and 1 <= image.shape[1] <= 640):
+        raise ValueError("Invalid frame dimensions")
+    return image
 
 
 class FrameServer:
@@ -127,14 +153,18 @@ p {font:12px var(--st-font,sans-serif); color:var(--st-text-color); text-align:c
 @media(max-width:600px) {.view {border-radius:20px;} button {width:44px;height:44px;}}
 """,
     js="""
-export default function({parentElement, data, setStateValue}) {
+export default function({parentElement, data, setStateValue, setTriggerValue}) {
  const root=parentElement, video=root.querySelector('video'), canvas=root.querySelector('canvas');
  const button=root.querySelector('.camera'), status=root.querySelector('p');
  let s=root.cameraState;
  if(!s) {
   s=root.cameraState={stream:null,busy:false,timer:null,raf:null,inflight:false,ok:false,overlay:null,show:false,frameCanvas:document.createElement('canvas'),controller:null,lastPost:0,data:data};
-  const post=async()=>{
-   if(!s.stream || document.hidden) return;
+   const post=async()=>{
+    if(!s.stream || document.hidden) return;
+    if(s.data.transport==='streamlit' && s.waiting) {
+     if(performance.now()-s.lastPost>15000) status.textContent='Connection stalled. Turn camera off and on to retry.';
+     return;
+    }
    if(s.inflight) {
     if(performance.now()-s.lastPost<3500) return;
     if(s.controller) s.controller.abort(); s.inflight=false;
@@ -150,7 +180,14 @@ export default function({parentElement, data, setStateValue}) {
    try {
     const blob=await new Promise(r=>frame.toBlob(r,'image/jpeg',0.75));
     if(!blob || !s.stream || s.controller!==controller) return;
-    const d=s.data||data;
+     const d=s.data||data;
+     if(d.transport==='streamlit') {
+      const reader=new FileReader();
+      const encoded=await new Promise((resolve,reject)=>{reader.onload=()=>resolve(reader.result.split(',')[1]);reader.onerror=reject;reader.readAsDataURL(blob);});
+      s.waiting=true; s.sequence=(s.sequence||0)+1;
+      setTriggerValue('frame',{jpeg:encoded,sequence:s.sequence});
+      return;
+     }
     const response=await fetch(d.url,{method:'POST',headers:{'Content-Type':'image/jpeg','X-Frame-Token':d.token},body:blob,signal:controller.signal});
     if(!response.ok) throw Error(`HTTP ${response.status}`);
     const payload=await response.json();
@@ -166,7 +203,7 @@ export default function({parentElement, data, setStateValue}) {
    } finally {clearTimeout(timer);if(s.controller===controller){s.controller=null;s.inflight=false;}}
   };
   s.stop=()=>{
-   if(s.timer) clearInterval(s.timer); s.timer=null;
+    if(s.timer) clearInterval(s.timer); s.timer=null; s.waiting=false;
    if(s.controller) s.controller.abort(); s.controller=null; s.inflight=false;
    if(s.raf) cancelAnimationFrame(s.raf); s.raf=null;
    if(s.stream) s.stream.getTracks().forEach(t=>t.stop()); s.stream=null;
@@ -183,7 +220,7 @@ export default function({parentElement, data, setStateValue}) {
     root.querySelector('.view').style.aspectRatio=`${video.videoWidth}/${video.videoHeight}`;
     status.textContent='Camera on';
     button.setAttribute('aria-label','STOP'); button.setAttribute('aria-pressed','true'); button.title='Turn camera off'; root.querySelector('.empty').style.display='none'; button.disabled=false; s.busy=false;
-    s.timer=setInterval(post,100);
+    s.timer=setInterval(post,s.data.transport==='streamlit'?200:100);
     if(s.raf===null) s.draw();
    } catch(e) {
     s.busy=false; button.disabled=false; status.textContent=`Camera failed: ${e.message}`;
@@ -210,6 +247,7 @@ export default function({parentElement, data, setStateValue}) {
   };
   s.draw();
  }
+ if(data.ack===s.sequence) {s.waiting=false;}
  root.querySelector('.mirror').onclick=()=>setStateValue('mirror',!s.data.mirror);
  root.querySelector('.landmarks').onclick=()=>setStateValue('show',!s.data.show);
  root.querySelector('.mirror').setAttribute('aria-pressed',String(data.mirror));

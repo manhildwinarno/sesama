@@ -2,6 +2,7 @@ import io
 import math
 import sys
 from pathlib import Path
+from time import monotonic
 
 import streamlit as st
 
@@ -19,7 +20,7 @@ import joblib
 import pandas as pd
 import mediapipe as mp
 from gtts import gTTS
-from local_camera import camera, get_frame_server, new_token
+from local_camera import camera, decode_frame
 from video_engine import VideoEngine
 from audio_playback import play_speech
 
@@ -57,10 +58,7 @@ with settings:
             flip = st.toggle("Flip model input", key="flip", persist_state="session", help="Changes inference input, not preview. Not an automatic correction.")
             reverse = st.toggle("Swap BISINDO hands", disabled=mode != "BISINDO", key="reverse", persist_state="session", help="Hand order must match training; changing it may reduce accuracy.")
 engine = st.session_state.engine
-server = get_frame_server()
-token = st.session_state.setdefault("frame_token", new_token())
 if engine and st.session_state.get("engine_mode") != mode:
-    server.unregister(token)
     engine.close()
     st.session_state.engine = None
 
@@ -81,18 +79,43 @@ with center, st.container(key="camera-stage"):
     if engine is None or not engine.running:
         engine = create_engine()
     engine.configure(flip, reverse if mode == "BISINDO" else False, mirror, threshold, hold, show_landmarks)
-    server.register(token, engine)
 
     with preview:
+        st.caption("Camera frames are sent to the app server for recognition. Images are not saved.")
         camera_key = f"local-camera-{mode}"
         def camera_options():
             state = st.session_state[camera_key]
             st.session_state.preview_mirror = state.mirror
             st.session_state.preview_landmarks = state.show
-        camera(key=f"local-camera-{mode}", data={
-            "url": server.url, "token": token, "mirror": mirror,
-            "show": show_landmarks,
-        }, default={"mirror": mirror, "show": show_landmarks}, on_mirror_change=camera_options, on_show_change=camera_options)
+        def receive_frame():
+            payload = st.session_state[camera_key].frame
+            if not isinstance(payload, dict) or not isinstance(payload.get("sequence"), int):
+                return
+            st.session_state.frame_ack = payload["sequence"]
+            now = monotonic()
+            if now - st.session_state.get("last_frame_received", 0) < 0.19:
+                return
+            st.session_state.last_frame_received = now
+            try:
+                image = decode_frame(payload.get("jpeg"))
+                current = st.session_state.engine
+                if current is None or not current.running:
+                    current = create_engine()
+                    current.configure(flip, reverse if mode == "BISINDO" else False, mirror, threshold, hold, show_landmarks)
+                current.submit(image)
+                st.session_state.camera_error = ""
+            except ValueError as exc:
+                st.session_state.camera_error = str(exc)
+
+        @st.fragment
+        def camera_panel():
+            camera(key=camera_key, data={
+                "transport": "streamlit", "mirror": mirror, "show": show_landmarks,
+                "ack": st.session_state.get("frame_ack", 0),
+                "overlay": st.session_state.engine.overlay_snapshot(),
+            }, default={"mirror": mirror, "show": show_landmarks},
+                on_frame_change=receive_frame, on_mirror_change=camera_options, on_show_change=camera_options)
+        camera_panel()
 
 
 @st.fragment(run_every=0.3)
@@ -123,6 +146,8 @@ def results():
         st.caption(f"Captured: {', '.join(events)}")
     if result.get("error"):
         st.error(result["error"])
+    if st.session_state.get("camera_error"):
+        st.error(st.session_state.camera_error)
     with st.container(border=True, key="transcript"):
         st.subheader("Transcript")
         st.text_area("Recognized text", value=st.session_state.sentence, disabled=True, height=100, label_visibility="collapsed",

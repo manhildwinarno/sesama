@@ -4,7 +4,9 @@ Nama sementara aplikasi **kata**. UI Inggris: **Sign to text**, **Text to graphi
 
 Demo lokal pengenalan abjad statis MediaPipe + SVM, bukan penerjemah tata bahasa atau gerakan dinamis. Jalankan `run_app.bat` atau `bash run_app.sh`; Jupyter tidak diperlukan. Launcher memakai `.venv` secara default. Dependensi: `python -m pip install -r requirements.txt` dengan interpreter environment aplikasi. `streamlit-webrtc`/`av` tidak dipakai aplikasi.
 
-## Kamera lokal
+## Kamera dan hosting
+
+**Transport aktif sudah memakai koneksi komponen Streamlit.** Preview tetap browser; frame dikirim ke server aplikasi melalui koneksi Streamlit, maksimum lima/detik dengan satu frame menunggu acknowledgment. Gambar tidak disimpan aplikasi. Detail HTTP loopback di bawah merupakan transport legacy untuk regresi, bukan jalur aplikasi saat ini. Panduan deploy dan batas validasi: [reports/DEPLOYMENT.md](reports/DEPLOYMENT.md).
 
 Preview memakai stream kamera browser langsung, target 1280×720 pada 30 FPS. Preview tidak melewati Python, jadi tidak menunggu inferensi. Kamera aktual dapat memilih resolusi lebih rendah.
 
@@ -73,6 +75,6 @@ Kode ekstraksi asli BISINDO tidak tersedia di folder dataset lokal. Pada sampel 
 
 Regresi browser: jalankan server di port 8511, lalu `node tests/debug_browser.cjs` dengan Playwright tersedia melalui `NODE_PATH` (atau instalasi lokal). `APP_URL` dapat mengganti URL server. Tes memakai webcam sintetis Chromium, memeriksa aliran frame sekitar 90 detik, toggle, STOP/START, serta piksel overlay dengan koordinat simulasi. Ini bukan uji akurasi pose. Komponen kamera berada di luar fragment; overlay dikirim dalam respons POST frame. Hanya panel hasil polling setiap 0,3 detik. Restart server setelah perubahan handler HTTP agar handler lama tidak tetap hidup.
 
-`node tests/check_audio.cjs` memeriksa playback tanpa pengulangan saat polling/remount. Aplikasi masih lokal: deploy remote membutuhkan HTTPS, autentikasi, dan rancangan transport kamera terpisah. Penataan repositori tidak mengubah batas tersebut.
+`node tests/check_audio.cjs` memeriksa playback tanpa pengulangan saat polling/remount. `python tests/test_cloud_frames.py` memeriksa validasi JPEG cloud; `node tests/check_cloud.cjs` menguji transport Streamlit dan isolasi sesi. Hosting harus HTTPS; batasi akses untuk penguji. Validasi Linux dan perangkat remote tetap diperlukan sebelum pengumpulan.
 
 `python tests/test_camera.py` menguji server JPEG loopback: frame valid diterima, token salah, origin asing, dan isi rusak ditolak. `python tests/test_app.py` menguji satu slot frame terbaru, resize rasio tetap, cleanup, kontrol teks/audio, navigasi halaman, pilihan bahasa, dan slider tanpa mengganti engine. `python -m compileall -q app.py app_pages local_camera.py video_engine.py tests` memeriksa sintaks. Jika Playwright tersedia, `node tests/check_design.cjs` mengambil screenshot ke `logs/design/` dan memeriksa font, overflow mobile, kamera saat pengaturan berubah, serta penutupan track saat navigasi. Atur `NODE_PATH` ke lokasi Playwright dan `APP_URL` jika bukan `http://localhost:8511`. Uji webcam fisik tetap wajib: izin kamera, START/STOP, pose, dan latensi nyata.
