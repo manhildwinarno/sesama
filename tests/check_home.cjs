@@ -16,6 +16,8 @@ const assert = require('node:assert/strict');
     const main=page.getByTestId('stMain');
     assert(await main.evaluate(el=>getComputedStyle(el).scrollbarGutter==='stable'));
     const mainBox=await main.boundingBox();
+    const margin=width<768?8:16;
+    assert(Math.abs(mainBox.x-margin)<=1 && Math.abs(width-mainBox.x-mainBox.width-margin)<=1,'Panel needs equal left/right viewport margins');
     const heroBox=await page.locator('.st-key-landing-hero').boundingBox();
     assert(heroBox.x+heroBox.width<=mainBox.x+mainBox.width-20,'Hero needs clearance from scrollbar');
    await page.screenshot({path:`logs/design/home-${width}.png`,fullPage:true});
