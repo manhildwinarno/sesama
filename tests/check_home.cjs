@@ -26,6 +26,7 @@ async function waitForAnchor(page,id) {
      assert.equal(await page.locator('#benefits .benefits-list > li').count(),3);
      assert.equal(await page.locator('#benefits').getByText('Coming soon.',{exact:true}).count(),0);
      await page.getByRole('contentinfo',{name:'Site footer'}).waitFor();
+     assert.deepEqual(await page.locator('.landing-footer').evaluate(el=>{const s=getComputedStyle(el);return [s.backgroundColor,s.color,s.borderRadius,s.paddingLeft,s.paddingRight];}),['rgba(0, 0, 0, 0)','rgb(36, 37, 34)','0px','0px','0px'],'Footer blends into landing panel without a separate colored card');
      assert.equal(await page.locator('.landing-footer a[href*="instagram"]').count(),0);
      assert.equal(await page.locator('.footer-links a').count(),6);
     assert.equal(await page.locator('#benchmark table').count(),2);
