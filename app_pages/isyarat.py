@@ -21,6 +21,7 @@ import mediapipe as mp
 from gtts import gTTS
 from local_camera import camera, get_frame_server, new_token
 from video_engine import VideoEngine
+from audio_playback import play_speech
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -142,10 +143,11 @@ def results():
                 with st.spinner("Preparing audio…"):
                     gTTS(st.session_state.sentence, lang="id", timeout=10).write_to_fp(audio)
                 st.session_state.audio = audio.getvalue()
+                st.session_state.audio_request = st.session_state.get("audio_request", 0) + 1
             except Exception as exc:
                 st.error(f"Audio failed: {exc}")
     if st.session_state.audio:
-        st.audio(st.session_state.audio, format="audio/mp3", autoplay=True)
+        play_speech(st.session_state.audio, st.session_state.get("audio_request", 0))
     with st.expander("Diagnostics", icon=":material/speed:"):
         ago = result.get("ago")
         age = f"{ago:.1f}s ago" if ago is not None else "none"

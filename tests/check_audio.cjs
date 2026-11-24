@@ -1,0 +1,17 @@
+// node tests/check_audio.cjs
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const source = fs.readFileSync('audio_playback.py', 'utf8').match(/js="""([\s\S]*?)"""/)[1];
+const render = new Function('return (' + source.replace('export default ', '').trim() + ')')();
+let plays = 0;
+const audio = {dataset:{}, play:() => {plays++; return Promise.resolve();}};
+const status = {textContent:''};
+const parentElement = {querySelector:s => s === 'audio' ? audio : status};
+render({parentElement, data:{audio:'YQ==',request:1}});
+render({parentElement, data:{audio:'YQ==',request:1}});
+assert.equal(plays,1, 'Polling must not restart audio');
+render({parentElement, data:{audio:'YQ==',request:2}});
+assert.equal(plays,2, 'Repeated click must replay audio');
+assert.equal(audio.src,'data:audio/mpeg;base64,YQ==');
+assert(!fs.readFileSync('audio_playback.py','utf8').includes('controls'));
+console.log('PASS: direct playback, repeat click, no polling replay or player controls.');

@@ -213,15 +213,17 @@ if __name__ == "__main__":
         closed_before = len(UIEngine.closed)
         app.switch_page("app_pages/grafis.py").run()
         assert len(UIEngine.closed) == closed_before + 1 and app.session_state["engine"] is None
-        app.text_area(key="visual_text").set_value("IQ A!").run()
+        app.text_input(key="visual_text").set_value("IQ A!").run()
         assert not app.exception
-        assert len(app.get("image")) == 3
-        assert any(c.value == "Unsupported character" for c in app.caption)
+        gallery = "".join(item.proto.body for item in app.get("html"))
+        assert gallery.count('src="data:image/') == 3
+        assert "Unsupported character" in gallery
         segment("Sign language").set_value("SIBI").run()
-        assert not app.exception and len(app.get("image")) == 0
-        print("OK: grafis I/Q, placeholder SIBI/huruf hilang, dan cleanup kamera.")
+        assert not app.exception
+        assert "".join(item.proto.body for item in app.get("html")).count('src="data:image/') == 3
+        print("OK: grafis SIBI/BISINDO inline, karakter tak didukung, dan cleanup kamera.")
         button("Clear").click().run()
-        assert app.text_area(key="visual_text").value == ""
+        assert app.text_input(key="visual_text").value == ""
         app.switch_page("app_pages/panduan.py").run()
         assert not app.exception and app.session_state["engine"] is None
         app.switch_page("app_pages/isyarat.py").run()

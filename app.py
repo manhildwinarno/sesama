@@ -15,14 +15,15 @@ pages = [
 page = st.navigation(pages, position="hidden")
 with st.sidebar:
     expanded = st.session_state.get("nav_expanded", False)
-    if st.button("Collapse navigation" if expanded else "Expand navigation", icon=":material/menu:", key="nav-toggle", help="Collapse navigation" if expanded else "Expand navigation", width="stretch"):
+    if st.button("Collapse navigation" if expanded else "Expand navigation", icon=":material/menu:", key="nav-toggle", width="stretch"):
         st.session_state.nav_expanded = not expanded
         st.rerun()
     st.html(f'<style>[data-testid="stSidebar"] {{width: {"220" if expanded else "88"}px !important; min-width: {"220" if expanded else "88"}px !important; max-width: {"220" if expanded else "88"}px !important;}}</style>')
     with st.container(key="nav-expanded" if expanded else "nav-compact"):
         for item in pages:
             with st.container(key=f"nav-{'active' if item.title == page.title else item.url_path}"):
-                st.page_link(item, label=item.title, icon=item.icon, help=item.title)
+                st.page_link(item, label=item.title, icon=item.icon)
+                st.html(f'<span class="nav-tip" role="tooltip">{item.title}</span>')
 
 # Halaman non-kamera melepas worker dan registrasi token sesi.
 if page.title != "Sign to text" and st.session_state.engine is not None:
