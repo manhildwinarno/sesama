@@ -63,19 +63,13 @@ All three used `random_state=42`. These are the compared configurations, not an 
         cells = pd.DataFrame([{"Actual": actual, "Predicted": predicted, "Count": matrix["counts"][i][j],
                                "Row share": matrix["counts"][i][j] / sum(matrix["counts"][i])}
                               for i, actual in enumerate(matrix["labels"]) for j, predicted in enumerate(matrix["labels"])])
-        normalized = st.toggle("Normalize by actual letter", value=False)
-        show_values = st.toggle("Show nonzero cell values", value=False, help="Keep off on small screens; hover or tap cells for exact values.")
-        value = "Row share" if normalized else "Count"
         heatmap = alt.Chart(cells).mark_rect(stroke="#f5f7f6", strokeWidth=.5).encode(
             x=alt.X("Predicted:O", sort=matrix["labels"], axis=alt.Axis(labelAngle=0, labelFontSize=8, labelOverlap=False)),
             y=alt.Y("Actual:O", sort=matrix["labels"], axis=alt.Axis(labelFontSize=8, labelOverlap=False)),
-            color=alt.Color(f"{value}:Q", scale=alt.Scale(domain=[0, 1 if normalized else int(cells["Count"].max())], range=["#eef2f5", "#526f8c"]),
-                            legend=alt.Legend(format=".0%" if normalized else "d", orient="bottom", gradientLength=140)),
+            color=alt.Color("Count:Q", scale=alt.Scale(domain=[0, int(cells["Count"].max())], range=["#eef2f5", "#526f8c"]), legend=None),
             tooltip=["Actual:O", "Predicted:O", alt.Tooltip("Count:Q", format="d"), alt.Tooltip("Row share:Q", format=".1%")],
         )
-        numbers = heatmap.mark_text(fontSize=9).encode(text=alt.condition(alt.datum.Count > 0, alt.Text(f"{value}:Q", format=".0%" if normalized else "d"), alt.value("")),
-            color=alt.condition(alt.datum.Count >= 5, alt.value("white"), alt.value("#242522")))
-        st.altair_chart(((heatmap + numbers) if show_values else heatmap).properties(height=400), width="stretch", key="confusion-chart")
+        st.altair_chart(heatmap.properties(height=400), width="stretch", key="confusion-chart")
         with st.expander("Supporting analysis"):
             st.subheader("Random Forest feature importance")
             st.markdown("SIBI, top 10 features. Recomputed with notebook settings; accuracy and weighted F1 match the saved RF scores to six decimals. This is **not SVM feature importance**, nor a causal explanation of its lead.")

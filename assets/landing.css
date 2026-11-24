@@ -58,6 +58,12 @@ body:has(.st-key-landing) [data-testid="stMainBlockContainer"] {
 .st-key-evaluation-content h3 {font-size:20px;}
 /* Edit bottom CTA spacing here; no Python change needed. */
 .st-key-evaluation-back {margin-top:48px; margin-bottom:24px;}
+/* ponytail: Streamlit 1.60 toolbar selectors; check on framework upgrades. */
+.st-key-evaluation-content [data-testid="stElementToolbar"] {position:static; display:flex; justify-content:flex-end; width:100%; height:36px; margin-bottom:6px; opacity:1; visibility:visible; background:transparent; border:0; box-shadow:none;}
+.st-key-evaluation-content [data-testid="stElementToolbarButtonContainer"] {height:36px; background:transparent; border:0; box-shadow:none; padding:0; gap:4px;}
+.st-key-evaluation-content [data-testid="stElementToolbarButton"]:has(button:not([aria-label^="Download"]):not([aria-label="Fullscreen"]):not([aria-label="Close fullscreen"])) {display:none;}
+.st-key-evaluation-content [data-testid="stElementToolbar"] button {min-height:36px; height:36px; width:36px; padding:6px; border:0; background:transparent; box-shadow:none;}
+.st-key-evaluation-content [data-testid="stElementToolbar"] button:hover {transform:none; background:#e5eae7; box-shadow:none;}
 .st-key-evaluation-content [data-testid="stMarkdownContainer"] p,.st-key-evaluation-content [data-testid="stMarkdownContainer"] li {line-height:1.75;}
 @media(max-width:767px) {.st-key-evaluation-content [data-testid="stButtonGroup"] [role="radiogroup"] {flex-wrap:wrap;} .st-key-evaluation-content [data-testid="stButtonGroup"] button[role="radio"] {flex-basis:calc(50% - 4px);}}
 .how-section {border-top:1px solid #24252214; padding:64px 0; scroll-margin-top:24px;}

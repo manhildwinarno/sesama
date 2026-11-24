@@ -123,12 +123,36 @@ const assert = require('node:assert/strict');
     assert(await page.getByText('SVM leads weighted F1 by 4.00 percentage points',{exact:false}).isVisible());
     assert(await page.getByText('SVM leads weighted F1 by 2.78 percentage points',{exact:false}).isVisible());
     assert.equal(await page.locator('img').count(),0,'Evaluation uses charts, not report images');
-    await page.getByRole('switch',{name:'Normalize by actual letter'}).focus();
-    await page.getByRole('switch',{name:'Normalize by actual letter'}).press('Space');
+    assert.equal(await page.getByRole('switch').count(),0,'Heatmap has no extra toggles');
     await page.getByText('Read the limits',{exact:true}).waitFor();
     await page.getByText('Supporting analysis',{exact:true}).click();
     await page.getByRole('heading',{name:'Samples per letter',exact:true}).waitFor();
     assert.equal(await page.getByTestId('stVegaLiteChart').count(),6);
+    for(const element of await page.locator('[data-testid="stVegaLiteChart"], [data-testid="stDataFrame"]').all()) {
+     await element.scrollIntoViewIfNeeded();
+     await element.hover();
+     const isTable=await element.getAttribute('data-testid')==='stDataFrame';
+     const toolbar=(isTable?element:element.locator('..')).getByTestId('stElementToolbar');
+     await toolbar.getByRole('button',{name:'Fullscreen',exact:true}).waitFor();
+     const buttons=toolbar.locator('button:visible');
+     assert.deepEqual(await buttons.evaluateAll(es=>es.map(e=>e.getAttribute('aria-label'))),[
+      isTable?'Download as CSV':'Download as PNG','Fullscreen'
+     ]);
+     const toolbarBox=await toolbar.boundingBox();
+     const content=isTable?element.getByTestId('stDataFrameResizable'):element;
+     const contentBox=await content.boundingBox();
+     assert(toolbarBox.y+toolbarBox.height<=contentBox.y+1,'Toolbar must not overlap content');
+     assert.equal(await toolbar.evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
+    }
+    const heatmap=page.getByTestId('stVegaLiteChart').nth(2).locator('..');
+    assert.equal(await heatmap.getByRole('graphics-symbol',{name:/Count.*legend/i}).count(),0);
+    // Force CSV fallback instead of Chromium's native save dialog in headless tests.
+    await page.evaluate(()=>{window.showSaveFilePicker=async()=>{throw new Error('Use download fallback');};});
+    const download=page.waitForEvent('download');
+    await page.getByTestId('stDataFrame').first().getByRole('button',{name:'Download as CSV',exact:true}).click();
+    assert((await download).suggestedFilename().endsWith('.csv'));
+    await heatmap.getByRole('button',{name:'Fullscreen',exact:true}).click();
+    await page.getByRole('button',{name:'Close fullscreen',exact:true}).click();
     const back=page.locator('.st-key-evaluation-back');
     assert.equal(await back.evaluate(el=>getComputedStyle(el).marginTop),'48px');
     await page.getByRole('heading',{name:'Inside the SIBI evaluation',exact:true}).evaluate(el=>el.scrollIntoView());
