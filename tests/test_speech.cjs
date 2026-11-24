@@ -21,6 +21,8 @@ assert.deepEqual(emitted,{key:'transcript',value:'halo'});
 assert(recognition.stopped);
 recognition.onerror({error:'not-allowed'});
 assert(status.textContent.includes('permission denied'));
+recognition.onerror({error:'network'});
+assert.equal(status.textContent, 'Service unavailable');
 cleanup();
 assert(recognition.aborted);
 console.log('PASS: speech start, final transcript, stop, permission error, cleanup');

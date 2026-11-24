@@ -17,7 +17,9 @@ with st.container(key="workspace"):
             apply_transcript(st.session_state.visual_speech.transcript)
 
         speech_input(key="visual_speech", on_transcript_change=receive_speech)
-        st.caption("Speech: Indonesian. Browser speech service may receive audio; internet required. Replaces text below.")
+        with st.popover("Speech info", icon=":material/info:"):
+            st.markdown("Speak Indonesian. Final speech replaces the text below (up to 120 characters).")
+            st.markdown("**Privacy:** your browser's speech service may receive audio. Internet and microphone permission are required. Browser support varies; try Google Chrome if the service is unavailable.")
         text = st.text_input("Text to spell", max_chars=120, placeholder="Type a word…", key="visual_text", persist_state="session", help="Press Enter. A–Z only; spaces separate words. Up to 120 characters.")
         st.button("Clear", icon=":material/backspace:", on_click=lambda: st.session_state.update(visual_text=""))
     with right, st.container(border=True, key="visual-output"):

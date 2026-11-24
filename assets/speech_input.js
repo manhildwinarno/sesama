@@ -5,7 +5,7 @@ export default function ({parentElement, setTriggerValue}) {
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Recognition) {
     button.disabled = true;
-    status.textContent = 'Speech input unavailable. Use Chrome or Edge, or type below.';
+    status.textContent = 'Browser unsupported';
     return;
   }
   const recognition = new Recognition();
@@ -29,19 +29,18 @@ export default function ({parentElement, setTriggerValue}) {
       button.setAttribute('aria-pressed', 'true');
       button.setAttribute('aria-label', 'Turn microphone off');
       button.textContent = '■';
-      status.textContent = 'Listening… Speak now.';
+      status.textContent = 'Listening…';
     } catch {
       reset();
-      status.textContent = 'Microphone could not start. Try again.';
+      status.textContent = 'Could not start';
     }
   };
   recognition.onresult = event => {
-    let final = '', interim = '';
+    let final = '';
     for (let i = 0; i < event.results.length; i++) {
       if (event.results[i].isFinal) final += event.results[i][0].transcript;
-      else interim += event.results[i][0].transcript;
     }
-    status.textContent = interim || final || 'Listening…';
+    status.textContent = final.trim() ? 'Speech captured' : 'Listening…';
     if (final.trim()) {
       setTriggerValue('transcript', final.trim().slice(0, 120));
       recognition.stop();
@@ -49,13 +48,13 @@ export default function ({parentElement, setTriggerValue}) {
   };
   recognition.onerror = event => {
     failed = true;
-    const messages = {'not-allowed':'Microphone permission denied. Allow access in browser settings.', 'no-speech':'No speech detected. Try again.', 'audio-capture':'No microphone available.', 'network':'Speech service unavailable. Check your connection.'};
-    status.textContent = messages[event.error] || 'Speech recognition failed. Try again or type below.';
+    const messages = {'not-allowed':'Microphone permission denied', 'no-speech':'No speech detected', 'audio-capture':'No microphone found', 'network':'Service unavailable'};
+    status.textContent = messages[event.error] || 'Speech recognition failed';
     reset();
   };
   recognition.onend = () => {
     reset();
-    if (!failed && status.textContent.startsWith('Listening')) status.textContent = 'Microphone off. Tap to try again.';
+    if (!failed && status.textContent.startsWith('Listening')) status.textContent = 'Microphone off';
   };
   const stop = () => recognition.abort();
   const visibility = () => { if (document.hidden) stop(); };
