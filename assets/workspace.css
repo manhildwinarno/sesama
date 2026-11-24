@@ -1,14 +1,16 @@
 /* ponytail: shell memakai DOM Streamlit 1.60; periksa selector setelah upgrade. */
 .stApp {
-  background: radial-gradient(ellipse at 5% 2%, #b5d681 0%, transparent 52%),
-              radial-gradient(ellipse at 72% 0%, #e78e70 0%, transparent 58%),
-              linear-gradient(135deg, #c6d38b, #d4b479 60%, #c2d68c);
+  background: radial-gradient(ellipse at 5% 2%, #91b8dc 0%, transparent 52%),
+              radial-gradient(ellipse at 85% 8%, #b6a5d6 0%, transparent 58%),
+              linear-gradient(135deg, #b7cce1, #c9c2e1 60%, #a8c8d6);
 }
 [data-testid="stHeader"], [data-testid="stSidebarHeader"], [data-testid="stSidebarCollapsedControl"] {display:none;}
 .st-key-brand {width:100%; max-width:none; margin:0 auto 8px;}
 .st-key-brand p {font-size:38px; line-height:1.2; text-align:center; margin:0; letter-spacing:-1.5px;}
 .st-key-brand strong {font-weight:800;}
-[data-testid="stButtonGroup"] [role="radiogroup"] {background:#f1f2f4; border-radius:12px; padding:5px; gap:4px;}
+[data-testid="stButtonGroup"] [role="radiogroup"] {background:#f1f2f4; border-radius:12px; padding:5px; gap:4px; display:flex; flex-wrap:nowrap; width:100%; box-sizing:border-box;}
+[data-testid="stButtonGroup"] button[role="radio"] {flex:1 1 auto; min-width:0; padding-inline:4px; white-space:nowrap;}
+[data-testid="stButtonGroup"] button[role="radio"] p {font-size:clamp(11px, .9vw, 14px);}
 [data-testid="stButtonGroup"] button {border:0 !important; border-radius:9px !important; background:transparent !important; box-shadow:none; transition:background .2s ease, box-shadow .2s ease, color .2s ease;}
 [data-testid="stButtonGroup"] button:hover {background:#e5e7e9 !important;}
 [data-testid="stButtonGroup"] button[aria-checked="true"] {background:#fff !important; color:#202322; box-shadow:0 2px 6px #0000000d;}

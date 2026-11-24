@@ -40,9 +40,19 @@ const fs = require('node:fs');
     }));
     await page.getByRole('button', {name:/Expand navigation/}).click();
     await page.getByRole('button', {name:/Collapse navigation/}).waitFor();
+    await page.setViewportSize({width:1280,height:900});
+    const choices = await page.getByRole('radiogroup', {name:'Sign language',exact:true}).getByRole('radio').all();
+    const choiceBoxes = await Promise.all(choices.map(choice => choice.boundingBox()));
+    assert(Math.abs(choiceBoxes[0].y - choiceBoxes[1].y) < 2, 'Language choices wrap with expanded navigation');
+    assert(choiceBoxes[0].x + choiceBoxes[0].width <= choiceBoxes[1].x + 1, 'Language choices overlap');
+    for (const choice of choices) {
+      assert(await choice.locator('p').evaluate(e => e.scrollWidth <= e.clientWidth + 1), 'Language label is truncated');
+    }
+    await page.screenshot({path:'logs/design/isyarat-expanded.png',fullPage:true});
     assert(await track.evaluate(t => t.readyState === 'live'), 'Expanding navigation stopped camera');
     await page.getByRole('button', {name:/Collapse navigation/}).click();
     await page.getByRole('button', {name:/Expand navigation/}).waitFor();
+    await page.setViewportSize({width:1440,height:900});
     assert(await track.evaluate(t => t.readyState === 'live'), 'Collapsing navigation stopped camera');
     await page.getByRole('button', {name:'Mirror preview',exact:true}).click();
     await page.getByRole('button', {name:'Show hand landmarks',exact:true}).click();
