@@ -41,7 +41,16 @@ const assert = require('node:assert/strict');
       const boxes=await Promise.all(steps.map(step=>step.boundingBox()));
       assert(width<768 ? boxes[1].y>boxes[0].y : Math.abs(boxes[1].y-boxes[0].y)<1,'Steps must stack only on mobile');
       const selection=page.locator('.motion-selection');
-      assert(await page.locator('.motion-cursor').isVisible(),'Animated cursor must survive HTML sanitization');
+       assert(await page.locator('.alphabet-motion .motion-cursor').isVisible(),'Animated cursor must survive HTML sanitization');
+       assert.equal(await page.locator('#how-it-works input[type="checkbox"]').count(),0);
+       assert(await page.locator('.demo-pose img').evaluate(img=>img.complete && img.naturalWidth>0));
+       const pose=await page.locator('.demo-pose').evaluate(el=>{
+        const animation=el.getAnimations()[0]; animation.pause();
+        animation.currentTime=0; const before=getComputedStyle(el).opacity;
+        animation.currentTime=3300; const after=getComputedStyle(el).opacity;
+        animation.play(); return [before,after];
+       });
+       assert.deepEqual(pose,['0','1'],'Step 2 reveals sample pose after Start');
       assert.equal(await selection.evaluate(el=>el.getAnimations().length),1);
       const positions=await selection.evaluate(el=>{
        const animation=el.getAnimations()[0];
@@ -50,13 +59,25 @@ const assert = require('node:assert/strict');
        animation.currentTime=2400; const second=getComputedStyle(el).transform;
        animation.play(); return [first,second];
       });
-      assert.notEqual(positions[0],positions[1],'Selection must switch between alphabets');
-      await page.getByLabel('Pause animation',{exact:true}).check();
-      assert.equal(await selection.evaluate(el=>getComputedStyle(el).animationPlayState),'paused');
+       assert.notEqual(positions[0],positions[1],'Selection must switch between alphabets');
+       assert(await page.locator('.alphabet-motion .motion-cursor').evaluate(el=>{
+        const blur=el.getAnimations().find(a=>a.animationName==='cursor-blur');
+        blur.pause(); blur.currentTime=960;
+        const active=getComputedStyle(el).filter.includes('blur(0.8px)'); blur.play(); return active;
+       }),'Cursor should blur during movement');
+       await page.getByRole('button',{name:/Pause animations/}).click();
+       await page.locator('.motion-paused').waitFor();
+       assert.equal(await selection.evaluate(el=>getComputedStyle(el).animationPlayState),'paused');
+       assert.equal(await page.locator('.demo-pose').evaluate(el=>getComputedStyle(el).animationPlayState),'paused');
+       await page.getByRole('button',{name:/Resume animations/}).click();
+       await page.locator('.how-section:not(.motion-paused)').waitFor();
+       await page.locator('.motion-stage').evaluateAll(stages=>stages.forEach(stage=>stage.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=3300;})));
+       await page.locator('#how-it-works').evaluate(el=>el.scrollIntoView());
       await page.screenshot({path:`logs/design/how-it-works-${width}.png`});
       await page.emulateMedia({reducedMotion:'reduce'});
       assert.equal(await selection.evaluate(el=>el.getAnimations().length),0);
-      assert(await page.locator('.motion-cursor').isHidden());
+       assert(await page.locator('.alphabet-motion .motion-cursor').isHidden());
+       assert.equal(await page.locator('.demo-pose').evaluate(el=>el.getAnimations().length),0);
       await page.emulateMedia({reducedMotion:'no-preference'});
      }
     }
@@ -74,6 +95,6 @@ const assert = require('node:assert/strict');
    assert.deepEqual(errors,[]);
    await page.close();
   }
-   console.log('PASS: desktop/mobile home, no illustration/camera, section anchors, menu, workspace link and hero CTA.');
+   console.log('PASS: desktop/mobile home, tutorial loops/blur/pause/reduced motion, no live camera, anchors and CTA.');
  } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
