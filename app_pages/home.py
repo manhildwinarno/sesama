@@ -15,8 +15,13 @@ with st.container(key="landing"):
         '<a class="landing-brand" href="/" target="_self" aria-label="sesama home">sesama</a>'
         f'<div class="desktop-links">{links}</div>'
         '<a class="nav-launch" href="/sign-to-text" target="_self">Open workspace <span aria-hidden="true">↗</span></a>'
-        f'<details class="mobile-nav"><summary>Menu</summary><div>{links}</div></details>'
-        '</nav>'
+        '<button class="mobile-menu-toggle" type="button" aria-label="Open menu" aria-haspopup="dialog" aria-controls="mobile-menu" aria-expanded="false"><span></span><span></span><span></span></button>'
+        '<dialog id="mobile-menu" class="mobile-drawer" aria-label="Mobile navigation">'
+        '<div class="drawer-header"><span>Explore</span><button class="drawer-close" type="button" aria-label="Close menu">×</button></div>'
+        f'<div class="drawer-links">{links}<a class="drawer-launch" href="/sign-to-text" target="_self">Open workspace ↗</a></div>'
+        '</dialog></nav>'
+        f'<script>{(Path(__file__).resolve().parents[1] / "assets/mobile_nav.js").read_text(encoding="utf-8")}</script>',
+        unsafe_allow_javascript=True,
     )
     with st.container(key="landing-hero"):
         st.title("Every letter. A little closer.")

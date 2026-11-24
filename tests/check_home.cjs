@@ -50,10 +50,32 @@ async function waitForAnchor(page,id) {
     const heroBox=await page.locator('.st-key-landing-hero').boundingBox();
     assert(heroBox.x+heroBox.width<=mainBox.x+mainBox.width-20,'Hero needs clearance from scrollbar');
    await page.screenshot({path:`logs/design/home-${width}.png`,fullPage:true});
-    if(width<900) await page.locator('.mobile-nav summary').click();
-    const links=page.locator(width<900?'.mobile-nav':'.desktop-links');
-    for(const anchor of ['how-it-works','benchmark','benefits','faq']) {
-     await links.locator(`a[href="#${anchor}"]`).click();
+     if(width<900) {
+      const toggle=page.getByRole('button',{name:'Open menu',exact:true});
+      await toggle.click();
+      const drawer=page.getByRole('dialog',{name:'Mobile navigation'});
+      await drawer.waitFor();
+      await drawer.evaluate(el=>Promise.all(el.getAnimations().map(a=>a.finished)));
+      const drawerBox=await drawer.boundingBox();
+      assert(drawerBox.x>=0 && drawerBox.x+drawerBox.width<=width+1,'Drawer stays inside viewport');
+      assert.equal(await main.evaluate(el=>getComputedStyle(el).overflow),'hidden');
+      await page.screenshot({path:`logs/design/mobile-menu-${width}.png`});
+      await page.keyboard.press('Escape');
+      await drawer.waitFor({state:'hidden'});
+      await toggle.click();
+      await drawer.evaluate(el=>Promise.all(el.getAnimations().map(a=>a.finished)));
+      await page.mouse.click(8,450);
+      await drawer.waitFor({state:'hidden'});
+      assert(await toggle.evaluate(el=>el===document.activeElement));
+      await toggle.click();
+      await page.getByRole('button',{name:'Close menu',exact:true}).click();
+      await drawer.waitFor({state:'hidden'});
+     }
+     const links=page.locator(width<900?'.drawer-links':'.desktop-links');
+     for(const anchor of ['how-it-works','benchmark','benefits','faq']) {
+      if(width<900) await page.getByRole('button',{name:'Open menu',exact:true}).click();
+      await links.locator(`a[href="#${anchor}"]`).click();
+      if(width<900) assert.equal(await page.locator('#mobile-menu').evaluate(el=>el.open),false);
       await page.waitForFunction(id=>location.hash==='#'+id,anchor);
       await waitForAnchor(page,anchor);
      const box=await page.locator('#'+anchor).boundingBox();
