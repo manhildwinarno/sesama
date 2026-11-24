@@ -184,30 +184,30 @@ if __name__ == "__main__":
         assert not app.exception, [e.value for e in app.exception]
         def segment(label):
             return next(r for r in app.button_group if r.label == label)
-        assert segment("Bahasa isyarat").value == "SIBI"
+        assert segment("Sign language").value == "SIBI"
         resource = app.session_state["engine"]
         def button(label):
             return next(b for b in app.button if b.label == label)
-        button("Catat manual").click().run()
+        button("Capture letter").click().run()
         assert app.session_state["sentence"] == "A"
-        button("Spasi").click().run()
+        button("Space").click().run()
         assert app.session_state["sentence"] == "A "
-        button("Hapus").click().run()
+        button("Delete").click().run()
         assert app.session_state["sentence"] == "A"
         with patch("gtts.gTTS") as speech:
-            button("Bunyikan teks").click().run()
+            button("Read aloud").click().run()
             speech.assert_called_once_with("A", lang="id", timeout=10)
         button("Reset").click().run()
         assert app.session_state["sentence"] == ""
         assert app.session_state["engine"] is resource and resource.running
         assert not app.exception, [e.value for e in app.exception]
         print("OK: UI, catat manual, spasi/hapus/reset/audio mempertahankan engine (kamera stub).")
-        segment("Bahasa isyarat").set_value("BISINDO").run()
+        segment("Sign language").set_value("BISINDO").run()
         app.selectbox[0].set_value("J").run()
         resource = app.session_state["engine"]
-        button("Rekam 5 detik").click().run()
+        button("Record 5 seconds").click().run()
         assert not app.exception and resource.label == "J"
-        assert any("rekaman mulai dalam 3 detik" in item.value for item in app.info)
+        assert any("recording in 3 seconds" in item.value for item in app.info)
         assert app.session_state["engine"] is resource
         print("OK: kontrol diagnosis BISINDO mempertahankan engine.")
         closed_before = len(UIEngine.closed)
@@ -216,18 +216,18 @@ if __name__ == "__main__":
         app.text_area(key="visual_text").set_value("IQ A!").run()
         assert not app.exception
         assert len(app.get("image")) == 3
-        assert any(c.value == "Karakter belum didukung" for c in app.caption)
-        segment("Bahasa grafis").set_value("SIBI").run()
+        assert any(c.value == "Unsupported character" for c in app.caption)
+        segment("Sign language").set_value("SIBI").run()
         assert not app.exception and len(app.get("image")) == 0
         print("OK: grafis I/Q, placeholder SIBI/huruf hilang, dan cleanup kamera.")
-        button("Bersihkan").click().run()
+        button("Clear").click().run()
         assert app.text_area(key="visual_text").value == ""
         app.switch_page("app_pages/panduan.py").run()
         assert not app.exception and app.session_state["engine"] is None
         app.switch_page("app_pages/isyarat.py").run()
         assert not app.exception and app.session_state["engine"].running
-        assert segment("Bahasa isyarat").value == "BISINDO"
-        for label, value in [("Batas keyakinan (%)", 70), ("Tahan pose (detik)", 0.6)]:
+        assert segment("Sign language").value == "BISINDO"
+        for label, value in [("Confidence (%)", 70), ("Hold duration (s)", 0.6)]:
             resource = app.session_state["engine"]
             next(s for s in app.slider if s.label == label).set_value(value).run()
             assert not app.exception and app.session_state["engine"] is resource

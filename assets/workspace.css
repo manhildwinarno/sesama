@@ -4,25 +4,32 @@
               radial-gradient(ellipse at 72% 0%, #e78e70 0%, transparent 58%),
               linear-gradient(135deg, #c6d38b, #d4b479 60%, #c2d68c);
 }
-[data-testid="stHeader"] {background: transparent;}
+[data-testid="stHeader"], [data-testid="stSidebarHeader"], [data-testid="stSidebarCollapsedControl"] {display:none;}
+.st-key-brand p {font-size:24px; margin:0; letter-spacing:-1px;}
+[role="tooltip"] {font-size:11px !important; padding:5px 8px !important; max-width:180px;}
+[role="tooltip"] p {font-size:11px !important;}
 [data-testid="stMain"] {
-  margin: 28px 24px 28px 0; border: 1px solid #ffffffcc;
+  margin: 16px 16px 16px 0; border: 1px solid #ffffffcc;
   border-radius: 34px; background: #f5f7f6f5;
   box-shadow: 0 18px 60px #363b2510;
 }
-[data-testid="stMainBlockContainer"] {padding: 1.5rem 1.2rem 2rem;}
+[data-testid="stMainBlockContainer"] {padding: 12px 16px 16px;}
 [data-testid="stSidebar"] {
   background: #f8f9f4e8; border: 1px solid #ffffffb3;
-  border-radius: 30px; margin: 28px 12px 28px 24px;
+  border-radius: 30px; margin: 16px 12px 16px 16px; transform:none !important;
+  position:relative; flex-shrink:0;
 }
-[data-testid="stSidebarUserContent"] {padding: 20px 0; width:100%;}
+[data-testid="stSidebarUserContent"] {padding: 40px 10px 16px; width:100%;}
+[data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] {align-items:center; gap:12px;}
+[data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div {width:100%;}
 .st-key-nav-compact [data-testid="stPageLink"] a *,
 .st-key-nav-expanded [data-testid="stPageLink"] a * {color:inherit;}
 [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] > div {padding-inline:0;}
 [data-testid="stSidebar"] [data-testid="stSidebarContent"] {padding-inline:0;}
 .st-key-nav-toggle button {min-height:48px; border:0; background:#fff; width:52px; margin-inline:auto;}
 .st-key-nav-toggle button [data-testid="stMarkdownContainer"] {position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap;}
-.st-key-nav-compact {align-items:center;}
+.st-key-nav-compact [data-testid="stVerticalBlock"] {align-items:center; gap:0;}
+.st-key-nav-compact [data-testid="stPageLink"] {display:flex; justify-content:center;}
 .st-key-nav-toggle button [data-testid="stIconMaterial"] {font-size:24px;}
 .st-key-nav-compact [data-testid="stPageLink"] a {width:52px; height:52px; border-radius:50%; background:#fff; justify-content:center; padding:0; margin-bottom:12px;}
 .st-key-nav-compact [data-testid="stPageLink"] a, .st-key-nav-expanded [data-testid="stPageLink"] a {color:#242522;}
@@ -40,13 +47,17 @@
 .st-key-settings-card [data-testid="stWidgetLabel"] p {font-size:12px;}
 .st-key-preview-options [data-testid="stWidgetLabel"] p {font-size:12px;}
 .st-key-camera-stage {gap:8px;}
-.st-key-workspace > [data-testid="stVerticalBlock"] {gap:18px;}
+.st-key-workspace > [data-testid="stVerticalBlock"] {gap:12px;}
+.st-key-settings-card, .st-key-prediction, .st-key-transcript {padding:14px;}
+.st-key-settings-card [data-testid="stVerticalBlock"], .st-key-prediction [data-testid="stVerticalBlock"] {gap:12px;}
 .st-key-prediction [data-testid="stMetricValue"] {font-size: 3.5rem; line-height: 1.15;}
 .st-key-transcript textarea:disabled {color: var(--st-text-color); -webkit-text-fill-color: var(--st-text-color); opacity: 1;}
 @media (max-width: 767px) {
-  [data-testid="stSidebar"] {background: #f8f9f4; margin: 12px;}
-  [data-testid="stMain"] {margin: 12px; border-radius: 22px;}
-  [data-testid="stMainBlockContainer"] {padding: 2.5rem 1rem 2rem;}
+  section[data-testid="stSidebar"] {background: #f8f9f4; margin: 8px 6px; min-width:64px !important; max-width:64px !important; width:64px !important; position:fixed; inset:0 auto 0 0; height:calc(100dvh - 16px);}
+  [data-testid="stSidebarUserContent"] {padding:20px 0;}
+  [data-testid="stMain"] {margin:8px 8px 8px 76px; border-radius: 22px; min-width:0; width:calc(100% - 84px);}
+  [data-testid="stMainBlockContainer"] {padding:12px 10px;}
   .st-key-workspace > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"] {flex-wrap: wrap;}
   .st-key-workspace > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {min-width: 100%;}
+  .st-key-workspace [data-testid="stColumn"]:has(.st-key-camera-stage) {order:-1;}
 }

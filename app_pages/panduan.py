@@ -1,18 +1,14 @@
 import streamlit as st
 
-with st.container(key="workspace"):
-    st.caption("RUANG BELAJAR / PANDUAN")
-    st.title("Kenali abjad, langkah demi langkah.")
-    with st.container(border=True):
-        st.subheader("Isyarat ke teks")
-        st.markdown("1. Pilih SIBI atau BISINDO, lalu tekan **START** dan izinkan kamera.\n2. Pastikan tangan dan jari terlihat, dengan pencahayaan merata.\n3. Tahan pose hingga huruf tercatat. Lepaskan tangan sebelum mengulang huruf sama.\n4. Gunakan Spasi, Hapus, dan Reset untuk merangkai teks. Tekan **STOP** saat selesai.")
-        st.caption("Cerminkan preview hanya mengubah tampilan. Balik input model mengubah gambar inferensi. Urutan tangan BISINDO harus sesuai training; dukungan kedua tangan belum tervalidasi.")
-    with st.container(border=True):
-        st.subheader("Teks ke grafis")
-        st.write("Tulis hingga 120 karakter. A–Z dieja per huruf, spasi memisahkan kata. SIBI memakai placeholder sampai aset dan pose terverifikasi tersedia.")
-        st.caption("Aplikasi mengenali abjad statis, bukan tata bahasa atau gerakan dinamis. Rekaman suara belum tersedia.")
-    with st.container(border=True):
-        st.subheader("Privasi dan batas penggunaan")
-        st.write("Mikrofon dimatikan. Preview kamera tetap di browser; frame JPEG dikirim ke server lokal untuk inferensi. CSV diagnosis berisi landmark dan prediksi, tanpa gambar.")
-        st.write("Bunyikan teks memerlukan internet dan mengirim teks ke Google melalui gTTS. Gunakan aplikasi di localhost; akses remote memerlukan rancangan keamanan terpisah.")
-        st.caption("Metrik evaluasi yang dilaporkan: SIBI 95,92%, BISINDO 95,95%. Bukan jaminan akurasi webcam. Pose, posisi, pencahayaan, dan kesesuaian training memengaruhi hasil.")
+with st.container(key="workspace"), st.container(border=True):
+    st.subheader("Help")
+    with st.expander("Sign to text", expanded=True):
+        st.markdown("1. Choose SIBI or BISINDO and turn the camera on.\n2. Keep all fingers visible in even light. Hold a static letter pose until captured.\n3. Release your hand before repeating the same letter.\n4. Use Space, Delete, and Reset to edit. Turn the camera off when finished.")
+        st.write("Mirror changes preview only. Flip model input changes inference. BISINDO hand order must match training; support for both hands is not validated.")
+    with st.expander("Text to graphics"):
+        st.write("Spell A–Z, up to 120 characters. Spaces separate words. SIBI uses placeholders. BISINDO assets come from Canva elements according to the contributor; poses have not been independently verified.")
+        st.write("Static graphics do not demonstrate movement. This app recognizes static alphabet poses, not sign-language grammar or dynamic gestures. Speech input is not available.")
+    with st.expander("Privacy and limitations"):
+        st.write("Microphone is disabled. Camera preview stays in your browser; JPEG frames go to the local inference server. Diagnostic CSV files contain landmarks and predictions, not images.")
+        st.write("Read aloud requires internet and sends transcript to Google through gTTS. Pronunciation is Indonesian. Use localhost; remote access requires a separate security design.")
+        st.write("Reported evaluation accuracy: SIBI 95.92%, BISINDO 95.95%. Not guaranteed webcam accuracy. Pose, position, lighting, and training alignment affect results.")

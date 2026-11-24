@@ -44,27 +44,17 @@ def accept_candidate():
 
 workspace = st.container(key="workspace")
 with workspace:
-    with st.container(horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"):
-        st.markdown("**kata.** / Isyarat ke teks")
-        st.caption("Abjad statis · Demo lokal · Mikrofon mati")
     settings, center, right = st.columns([1.05, 3.2, 1.4], gap="small")
 with settings:
     with st.container(border=True, key="settings-card"):
-        st.subheader("Pengenalan")
-        mode = st.segmented_control("Bahasa isyarat", ["SIBI", "BISINDO"], default="SIBI", required=True, key="mode", persist_state="session")
-        st.caption("Satu tangan." if mode == "SIBI" else "Satu atau dua tangan sesuai abjad.")
-        st.space("small")
-        threshold = st.slider("Batas keyakinan (%)", 40, 95, 65, key="threshold", persist_state="session",
-                              help="Skor minimum sebelum huruf dicatat, bukan akurasi model.")
-        hold = st.slider("Tahan pose (detik)", 0.2, 2.0, 0.4, key="hold", persist_state="session")
-        st.caption("Tahan pose hingga tercatat. Lepaskan tangan sebelum mengulang huruf sama.")
-    with st.expander("Pengaturan lanjutan", icon=":material/settings:"):
-        flip = st.toggle("Balik input model", key="flip", persist_state="session", help="Mengubah gambar inferensi, bukan preview. Bukan koreksi otomatis.")
-        reverse = st.toggle("Tukar urutan tangan BISINDO", disabled=mode != "BISINDO", key="reverse", persist_state="session")
-        st.caption("Urutan harus cocok data pelatihan. Perubahan bisa memperburuk hasil.")
-    with st.expander("Panduan singkat", icon=":material/help:"):
-        st.write("Hadapkan tangan ke kamera dengan cahaya merata. Pastikan seluruh jari terlihat.")
-        st.caption("Mirror hanya mengubah preview. Bukan penerjemah tata bahasa atau gerakan dinamis.")
+        st.subheader("Recognition")
+        mode = st.segmented_control("Sign language", ["SIBI", "BISINDO"], default="SIBI", required=True, key="mode", persist_state="session")
+        threshold = st.slider("Confidence (%)", 40, 95, 65, key="threshold", persist_state="session",
+                              help="Minimum score for automatic capture; not model accuracy.")
+        hold = st.slider("Hold duration (s)", 0.2, 2.0, 0.4, key="hold", persist_state="session")
+        with st.expander("Advanced", icon=":material/settings:"):
+            flip = st.toggle("Flip model input", key="flip", persist_state="session", help="Changes inference input, not preview. Not an automatic correction.")
+            reverse = st.toggle("Swap BISINDO hands", disabled=mode != "BISINDO", key="reverse", persist_state="session", help="Hand order must match training; changing it may reduce accuracy.")
 engine = st.session_state.engine
 server = get_frame_server()
 token = st.session_state.setdefault("frame_token", new_token())
@@ -75,10 +65,8 @@ if engine and st.session_state.get("engine_mode") != mode:
 
 with center, st.container(key="camera-stage"):
     preview = st.container()
-    with st.container(horizontal=True, horizontal_alignment="center", key="preview-options"):
-        mirror = st.toggle("Cerminkan preview", value=True)
-        show_landmarks = st.toggle("Titik tangan", value=False,
-                                   help="Hasil pelacakan terbaru, bukan bukti prediksi benar. Bisa sedikit tertinggal saat bergerak.")
+    mirror = st.session_state.get("preview_mirror", True)
+    show_landmarks = st.session_state.get("preview_landmarks", False)
     # Factory dipanggil worker; tidak memanggil st.* dari thread video/inferensi.
     def create_engine():
         engine = VideoEngine(load_model(mode), lambda: mp.solutions.hands.Hands(
@@ -95,11 +83,15 @@ with center, st.container(key="camera-stage"):
     server.register(token, engine)
 
     with preview:
+        camera_key = f"local-camera-{mode}"
+        def camera_options():
+            state = st.session_state[camera_key]
+            st.session_state.preview_mirror = state.mirror
+            st.session_state.preview_landmarks = state.show
         camera(key=f"local-camera-{mode}", data={
             "url": server.url, "token": token, "mirror": mirror,
             "show": show_landmarks,
-        })
-    st.caption("Preview kamera lokal · Izinkan kamera saat diminta browser.")
+        }, default={"mirror": mirror, "show": show_landmarks}, on_mirror_change=camera_options, on_show_change=camera_options)
 
 
 @st.fragment(run_every=0.3)
@@ -114,70 +106,66 @@ def results():
     confidence = result.get("confidence", 0) if active else 0
     st.session_state.candidate = candidate
     with st.container(border=True, key="prediction"):
-        st.metric("Huruf aktif", candidate or "—")
+        st.metric("Current letter", candidate or "—")
         st.progress(min(1.0, max(0.0, confidence / 100)),
-                    text=f"Keyakinan {confidence:.1f}% · ambang {threshold}%")
+                    text=f"Confidence {confidence:.1f}%")
         if not active:
-            status = "Menunggu frame kamera · tekan START"
+            status = "Camera off"
         elif not candidate:
-            status = "Menunggu pose · belum ada input tangan yang dapat diklasifikasikan"
+            status = "Waiting for a hand"
         elif confidence < threshold:
-            status = "Skor belum cukup · sesuaikan pose"
+            status = "Adjust your pose"
         else:
-            status = f"Tahan pose {hold:.1f} detik · lepaskan tangan untuk mengulang"
+            status = f"Hold for {hold:.1f}s · release to repeat"
         st.caption(status)
-        if active and "count" in result:
-            st.caption(f"Terdeteksi {result['count']} tangan · " +
-                       ("model dijalankan" if candidate else "belum ada kandidat"))
     if events:
-        st.caption(f"Huruf tercatat: {', '.join(events)}")
+        st.caption(f"Captured: {', '.join(events)}")
     if result.get("error"):
         st.error(result["error"])
     with st.container(border=True, key="transcript"):
-        st.subheader("Hasil ejaan")
-        st.text_area("Teks hasil pengenalan", value=st.session_state.sentence, disabled=True, height=130,
-                     placeholder="Huruf yang diterima muncul di sini.")
+        st.subheader("Transcript")
+        st.text_area("Recognized text", value=st.session_state.sentence, disabled=True, height=100, label_visibility="collapsed",
+                     placeholder="Your letters appear here")
     with st.container(horizontal=True):
-        st.button("Spasi", on_click=edit_sentence, args=("space",), disabled=not st.session_state.sentence)
-        st.button("Hapus", on_click=edit_sentence, args=("delete",), disabled=not st.session_state.sentence)
+        st.button("Space", on_click=edit_sentence, args=("space",), disabled=not st.session_state.sentence)
+        st.button("Delete", on_click=edit_sentence, args=("delete",), disabled=not st.session_state.sentence)
         st.button("Reset", on_click=edit_sentence, args=("reset",), disabled=not st.session_state.sentence)
-    st.button("Catat manual", disabled=not candidate, on_click=accept_candidate,
-              help="Melewati ambang; periksa huruf sebelum mencatat.")
-    if st.button("Bunyikan teks", icon=":material/volume_up:", width="stretch", type="primary",
+    st.button("Capture letter", disabled=not candidate, on_click=accept_candidate,
+              help="Bypasses confidence threshold. Check the letter first.")
+    if st.button("Read aloud", icon=":material/volume_up:", width="stretch", type="primary", help="Requires internet. Sends transcript to Google. Indonesian pronunciation.",
                  disabled=not st.session_state.sentence.strip()):
         if not st.session_state.sentence.strip():
-            st.warning("Kalimat masih kosong.")
+            st.warning("Transcript is empty.")
         else:
             try:
                 audio = io.BytesIO()
-                with st.spinner("Menyiapkan suara…"):
+                with st.spinner("Preparing audio…"):
                     gTTS(st.session_state.sentence, lang="id", timeout=10).write_to_fp(audio)
                 st.session_state.audio = audio.getvalue()
             except Exception as exc:
-                st.error(f"Suara gagal: {exc}")
+                st.error(f"Audio failed: {exc}")
     if st.session_state.audio:
         st.audio(st.session_state.audio, format="audio/mp3", autoplay=True)
-    st.caption("Suara memerlukan internet. Teks dikirim ke Google saat Bunyikan teks ditekan.")
-    with st.expander("Diagnostik", icon=":material/speed:"):
+    with st.expander("Diagnostics", icon=":material/speed:"):
         ago = result.get("ago")
-        age = f"{ago:.1f} detik lalu" if ago is not None else "belum ada"
-        st.caption(f"Frame terakhir {age} · {result.get('fps', 0) if active else 0:.1f} FPS · inferensi {result.get('ms', 0) if active else 0:.0f} ms")
-        st.caption("FPS mengukur frame yang diterima Python, bukan render preview browser. Preview memakai kamera lokal.")
+        age = f"{ago:.1f}s ago" if ago is not None else "none"
+        st.caption(f"Last frame {age} · {result.get('fps', 0) if active else 0:.1f} FPS · inference {result.get('ms', 0) if active else 0:.0f} ms")
+        st.caption("FPS measures frames received by Python, not browser preview.")
     if mode == "BISINDO":
-        with st.expander("Rekam sampel diagnosis"):
-            label = st.selectbox("Huruf yang diperagakan", list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-            st.caption("Setelah ditekan, tersedia 3 detik untuk menyiapkan pose. Rekaman berlangsung 5 detik, tanpa gambar. Unduh sebelum merekam ulang atau mengganti mode.")
+        with st.expander("Record sample"):
+            label = st.selectbox("Target letter", list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+            st.caption("3s preparation, 5s capture. Landmarks only. Download before recording again or switching language.")
             recording, rows = engine.diagnostic_snapshot()
-            if st.button("Rekam 5 detik", disabled=recording or not active):
+            if st.button("Record 5 seconds", disabled=recording or not active):
                 engine.start_diagnostic(label)
                 recording, rows = True, []
             countdown = engine.diagnostic_countdown()
             if countdown > 0:
-                st.info(f"Siapkan pose · rekaman mulai dalam {math.ceil(countdown)} detik")
+                st.info(f"Prepare pose · recording in {math.ceil(countdown)} seconds")
             else:
-                st.caption(f"{'Merekam' if recording else 'Siap'} · {len(rows)} sampel")
+                st.caption(f"{'Recording' if recording else 'Ready'} · {len(rows)} samples")
             if rows and not recording:
-                st.download_button("Unduh CSV diagnosis", pd.DataFrame(rows).to_csv(index=False),
+                st.download_button("Download diagnostic CSV", pd.DataFrame(rows).to_csv(index=False),
                                    file_name=f"bisindo_{rows[0]['label']}_diagnosis.csv", mime="text/csv")
 
 

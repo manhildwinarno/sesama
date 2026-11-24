@@ -105,10 +105,10 @@ def new_token():
 
 camera = st.components.v2.component(
     "local_camera",
-    html="""<div class="view"><div class="empty"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="12" height="12" rx="3"/><path d="m15 10 6-3v10l-6-3M3 3l18 18"/></svg><strong>Kamera belum aktif</strong><span>Nyalakan kamera untuk mulai mengeja</span></div><video autoplay muted playsinline></video><canvas></canvas><span class="label">Kamera lokal</span></div>
-<div class="dock"><button type="button" aria-label="START" aria-pressed="false" title="Nyalakan kamera"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="12" height="12" rx="3"/><path d="m15 10 6-3v10l-6-3"/></svg></button><span class="dock-label">Nyalakan kamera</span></div><p role="status">Kamera belum aktif.</p>""",
+    html="""<div class="view"><div class="empty"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="12" height="12" rx="3"/><path d="m15 10 6-3v10l-6-3M3 3l18 18"/></svg><strong>Camera off</strong></div><video autoplay muted playsinline></video><canvas></canvas></div>
+<div class="dock"><button class="mirror" type="button" aria-label="Mirror preview" aria-pressed="true" title="Mirror preview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 7l5-3v16l-5-3zM21 7l-5-3v16l5-3z"/></svg></button><button class="camera" type="button" aria-label="START" aria-pressed="false" title="Turn camera on"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="12" height="12" rx="3"/><path d="m15 10 6-3v10l-6-3"/></svg></button><button class="landmarks" type="button" aria-label="Show hand landmarks" aria-pressed="false" title="Show hand landmarks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 18 3-7 4 4 4-9 3 12M5 18h14"/><circle cx="8" cy="11" r="2"/><circle cx="16" cy="6" r="2"/></svg></button></div><p role="status">Allow camera access to begin.</p>""",
     css="""
-.view {position:relative; aspect-ratio:4/3; background:#292b28; border-radius:28px; overflow:hidden; margin-bottom:18px;}
+.view {position:relative; aspect-ratio:16/9; background:#292b28; border-radius:24px; overflow:hidden; margin-bottom:14px;}
 video,canvas {position:absolute; width:100%; height:100%; object-fit:contain;}
 canvas {pointer-events:none;}
 .empty {position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px; color:#f4f5ef; font:14px var(--st-font,sans-serif);}
@@ -116,19 +116,20 @@ canvas {pointer-events:none;}
 .empty strong {font-size:20px; font-weight:500;}
 .empty span {color:#c3c8bc;}
 .label {position:absolute; left:24px; bottom:22px; color:white; font:12px var(--st-font,sans-serif); background:#0005; padding:7px 12px; border-radius:99px;}
-.dock {display:flex; align-items:center; justify-content:center; gap:14px; width:fit-content; margin:0 auto; border-radius:99px; background:#111; padding:8px 22px 8px 8px; color:#fff; font:13px var(--st-font,sans-serif);}
+.dock {display:flex; align-items:center; justify-content:center; gap:12px; width:fit-content; margin:0 auto; border-radius:99px; background:#111; padding:8px; color:#fff; font:13px var(--st-font,sans-serif);}
 button {display:grid; place-items:center; width:52px; height:52px; background:#383a36; color:white; border:0; border-radius:50%; cursor:pointer;}
 button svg {width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:1.7;}
-button[aria-pressed="true"] {background:#e34c43;}
+button.camera[aria-pressed="true"] {background:#e34c43;}
+button:not(.camera)[aria-pressed="true"] {background:#edf1e4; color:#222;}
 button:focus-visible {outline:3px solid #6b7555; outline-offset:3px;}
 button:disabled {opacity:.6; cursor:wait;}
 p {font:12px var(--st-font,sans-serif); color:var(--st-text-color); text-align:center;}
-@media(max-width:600px) {.view {aspect-ratio:4/3; border-radius:22px;}}
+@media(max-width:600px) {.view {border-radius:20px;} button {width:44px;height:44px;}}
 """,
     js="""
-export default function({parentElement, data}) {
+export default function({parentElement, data, setStateValue}) {
  const root=parentElement, video=root.querySelector('video'), canvas=root.querySelector('canvas');
- const button=root.querySelector('button'), status=root.querySelector('p');
+ const button=root.querySelector('.camera'), status=root.querySelector('p');
  let s=root.cameraState;
  if(!s) {
   s=root.cameraState={stream:null,busy:false,timer:null,raf:null,inflight:false,ok:false,overlay:null,show:false,frameCanvas:document.createElement('canvas'),controller:null,lastPost:0,data:data};
@@ -156,11 +157,11 @@ export default function({parentElement, data}) {
     if(s.controller===controller && payload.overlay) {
      s.overlay=payload.overlay;s.received=performance.now();
     }
-    if(s.controller===controller && !s.ok) {s.ok=true;status.textContent='Preview lokal · inferensi menerima frame.';}
+    if(s.controller===controller && !s.ok) {s.ok=true;status.textContent='Camera on';}
    } catch(e) {
     if(s.stream && s.controller===controller) {
      s.ok=false;
-     status.textContent=`Kamera aktif · inferensi terputus (${e.name==='AbortError'?'timeout':e.message}), mencoba lagi…`;
+     status.textContent=`Inference disconnected (${e.name==='AbortError'?'timeout':e.message}). Retrying…`;
     }
    } finally {clearTimeout(timer);if(s.controller===controller){s.controller=null;s.inflight=false;}}
   };
@@ -169,22 +170,23 @@ export default function({parentElement, data}) {
    if(s.controller) s.controller.abort(); s.controller=null; s.inflight=false;
    if(s.raf) cancelAnimationFrame(s.raf); s.raf=null;
    if(s.stream) s.stream.getTracks().forEach(t=>t.stop()); s.stream=null;
-    video.srcObject=null; button.setAttribute('aria-label','START'); button.setAttribute('aria-pressed','false'); button.title='Nyalakan kamera'; root.querySelector('.dock-label').textContent='Nyalakan kamera'; root.querySelector('.empty').style.display='flex'; button.disabled=false; s.busy=false; s.ok=false;
-   status.textContent='Kamera berhenti.';
+    video.srcObject=null; button.setAttribute('aria-label','START'); button.setAttribute('aria-pressed','false'); button.title='Turn camera on'; root.querySelector('.empty').style.display='flex'; button.disabled=false; s.busy=false; s.ok=false;
+    status.textContent='Camera off';
   };
   button.onclick=async()=>{
    if(s.stream) {s.stop(); return;}
-   s.busy=true; button.disabled=true; status.textContent='Izinkan akses kamera di browser…';
+    s.busy=true; button.disabled=true; status.textContent='Allow camera access…';
    try {
     const stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30,max:30}},audio:false});
     if(!s.busy) {stream.getTracks().forEach(t=>t.stop());return;}
     s.stream=stream; video.srcObject=stream; await video.play();
-    status.textContent='Preview lokal · mengirim frame…';
-    button.setAttribute('aria-label','STOP'); button.setAttribute('aria-pressed','true'); button.title='Matikan kamera'; root.querySelector('.dock-label').textContent='Matikan kamera'; root.querySelector('.empty').style.display='none'; button.disabled=false; s.busy=false;
+    root.querySelector('.view').style.aspectRatio=`${video.videoWidth}/${video.videoHeight}`;
+    status.textContent='Camera on';
+    button.setAttribute('aria-label','STOP'); button.setAttribute('aria-pressed','true'); button.title='Turn camera off'; root.querySelector('.empty').style.display='none'; button.disabled=false; s.busy=false;
     s.timer=setInterval(post,100);
     if(s.raf===null) s.draw();
    } catch(e) {
-    s.busy=false; button.disabled=false; status.textContent=`Kamera gagal: ${e.message}`;
+    s.busy=false; button.disabled=false; status.textContent=`Camera failed: ${e.message}`;
    }
   };
   s.draw=()=>{
@@ -208,6 +210,10 @@ export default function({parentElement, data}) {
   };
   s.draw();
  }
+ root.querySelector('.mirror').onclick=()=>setStateValue('mirror',!s.data.mirror);
+ root.querySelector('.landmarks').onclick=()=>setStateValue('show',!s.data.show);
+ root.querySelector('.mirror').setAttribute('aria-pressed',String(data.mirror));
+ root.querySelector('.landmarks').setAttribute('aria-pressed',String(data.show));
  s.data=data; s.show=data.show;
  video.style.transform=canvas.style.transform=data.mirror?'scaleX(-1)':'none';
  if(data.overlay && data.overlay.stamp!==s.stamp) {s.stamp=data.overlay.stamp;s.overlay=data.overlay;s.received=performance.now();}

@@ -19,19 +19,19 @@ const assert = require('node:assert/strict');
   await page.getByRole('button',{name:'START',exact:true}).click();
   await page.waitForTimeout(3000);
   console.log('RESTART_POSTS',posts);
-  for(const label of ['Titik tangan','Cerminkan preview']) {
-   await page.getByText(label,{exact:true}).click();
+   for(const label of ['Show hand landmarks','Mirror preview']) {
+    await page.getByRole('button',{name:label,exact:true}).click();
    await page.waitForTimeout(3000);
    console.log('TOGGLE',label,'posts',posts,await page.locator('video').evaluate(v=>({paused:v.paused,track:v.srcObject?.getVideoTracks()[0]?.readyState})));
   }
-  await page.getByText('Diagnostik',{exact:true}).click();
-  console.log('DIAGNOSTICS',await page.getByText(/Frame terakhir/).textContent());
+   await page.getByText('Diagnostics',{exact:true}).click();
+   console.log('DIAGNOSTICS',await page.getByText(/Last frame/).textContent());
   for(let i=0;i<12;i++) {
    const previous=posts;
    await page.waitForTimeout(5000);
    assert(posts>previous,'Frame delivery stalled');
    assert(await page.locator('video').evaluate(v=>v.srcObject?.getVideoTracks()[0]?.readyState==='live'),'Camera stopped');
-   console.log('LONG',i,posts,await page.getByText(/Frame terakhir/).textContent());
+    console.log('LONG',i,posts,await page.getByText(/Last frame/).textContent());
    console.log('STATE',await page.locator('video').evaluate(v=>{const s=v.getRootNode().cameraState;return {hidden:document.hidden,stream:!!s?.stream,timer:s?.timer,raf:s?.raf,inflight:s?.inflight,paused:v.paused,connected:v.isConnected}}));
   }
   // Render known landmarks through actual HTTP response handling, independent of ML accuracy.
