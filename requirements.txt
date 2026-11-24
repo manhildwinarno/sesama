@@ -1,4 +1,5 @@
 streamlit==1.60.0
+starlette==0.49.3
 gTTS==2.5.4
 mediapipe==0.10.21
 protobuf==4.25.9

@@ -11,7 +11,7 @@ Object.assign(nodes.video, {videoWidth:640, videoHeight:480});
 nodes.canvas.getContext = () => ctx;
 const root = {querySelector: key => nodes[key]};
 const render = vm.runInNewContext(source.replace('export default function', '(function') + ')', {
-  performance:{now:() => now}, document:{createElement:element},
+  performance:{now:() => now}, document:{createElement:element,addEventListener(){},removeEventListener(){}},
   requestAnimationFrame:() => 1, cancelAnimationFrame(){}, clearInterval(){},
 });
 const data = {mirror:false,show:true,overlay:{stamp:1,age:.1,flip:false,points:[Array.from({length:21}, () => [.5,.5])]}};

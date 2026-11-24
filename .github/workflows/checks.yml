@@ -15,5 +15,6 @@ jobs:
       - run: python tests/test_app.py
       - run: python tests/test_camera.py
       - run: python tests/test_cloud_frames.py
+      - run: python tests/test_http_middleware.py
       - run: node tests/check_audio.cjs
       - run: node tests/check_overlay.cjs

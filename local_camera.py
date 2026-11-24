@@ -164,7 +164,7 @@ export default function({parentElement, data, setStateValue, setTriggerValue}) {
  const root=parentElement, video=root.querySelector('video'), canvas=root.querySelector('canvas');
  const button=root.querySelector('.camera'), status=root.querySelector('p');
  let s=root.cameraState;
- if(s && s.mode!==data.mode) {s.stop(); delete root.cameraState; s=null;}
+ if(s && s.mode!==data.mode) {document.removeEventListener('click',s.navigation,true);s.stop(); delete root.cameraState; s=null;}
  if(!s) {
   s=root.cameraState={stream:null,busy:false,timer:null,raf:null,inflight:false,ok:false,overlay:null,show:false,frameCanvas:document.createElement('canvas'),controller:null,lastPost:0,data:data};
    const post=async()=>{
@@ -212,14 +212,16 @@ export default function({parentElement, data, setStateValue, setTriggerValue}) {
     }
    } finally {clearTimeout(timer);if(s.controller===controller){s.controller=null;s.inflight=false;}}
   };
-  s.stop=()=>{
+   s.stop=()=>{
     if(s.timer) clearInterval(s.timer); s.timer=null; s.waiting=false;
    if(s.controller) s.controller.abort(); s.controller=null; s.inflight=false;
    if(s.raf) cancelAnimationFrame(s.raf); s.raf=null;
    if(s.stream) s.stream.getTracks().forEach(t=>t.stop()); s.stream=null;
     video.srcObject=null; button.setAttribute('aria-label','START'); button.setAttribute('aria-pressed','false'); button.title='Turn camera on'; root.querySelector('.empty').style.display='flex'; button.disabled=false; s.busy=false; s.ok=false;
-    status.textContent='Camera off';
-  };
+     status.textContent='Camera off';
+   };
+   s.navigation=e=>{if(e.target.closest?.('[data-testid="stPageLink-NavLink"]')) s.stop();};
+   document.addEventListener('click',s.navigation,true);
   button.onclick=async()=>{
    if(s.stream) {s.stop(); return;}
     s.busy=true; button.disabled=true; status.textContent='Allow camera access…';
@@ -280,7 +282,7 @@ export default function({parentElement, data, setStateValue, setTriggerValue}) {
  s.data=data; s.show=data.show;
  video.style.transform=canvas.style.transform=data.mirror?'scaleX(-1)':'none';
   if(data.overlay && data.overlay.stamp!==s.stamp) {s.stamp=data.overlay.stamp;s.overlay=data.overlay;s.received=performance.now()-(data.overlay.age||0)*1000;}
- return ()=>{s.busy=false;s.stop();delete root.cameraState;};
+ return ()=>{document.removeEventListener('click',s.navigation,true);s.busy=false;s.stop();delete root.cameraState;};
 }
 """,
 )
