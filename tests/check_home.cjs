@@ -51,6 +51,17 @@ const assert = require('node:assert/strict');
         animation.play(); return [before,after];
        });
        assert.deepEqual(pose,['0','1'],'Step 2 reveals sample pose after Start');
+       assert.equal(await page.locator('.demo-start').count(),0);
+       assert(await page.locator('.demo-camera img').evaluate(img=>img.complete && img.naturalWidth>0));
+       const cameraStates=await page.locator('.camera-motion').evaluate(stage=>{
+        const nodes=[stage.querySelector('.demo-camera'),stage.querySelector('.demo-camera-slash')];
+        const sample=time=>{
+         nodes.forEach(el=>{const a=el.getAnimations()[0];a.pause();a.currentTime=time;});
+         return [getComputedStyle(nodes[0]).backgroundColor,getComputedStyle(nodes[1]).opacity];
+        };
+        const states=[sample(0),sample(3300)]; nodes.forEach(el=>el.getAnimations()[0].play()); return states;
+       });
+       assert.deepEqual(cameraStates,[['rgb(36, 37, 34)','1'],['rgb(227, 76, 67)','0']],'Camera changes off/on icon and active color');
       assert.equal(await selection.evaluate(el=>el.getAnimations().length),1);
       const positions=await selection.evaluate(el=>{
        const animation=el.getAnimations()[0];

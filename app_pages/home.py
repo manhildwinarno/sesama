@@ -24,6 +24,7 @@ with st.container(key="landing"):
                 st.switch_page("app_pages/isyarat.py")
 
     hand_image = base64.b64encode((Path(__file__).resolve().parents[1] / "assets/SIBI/H.jpeg").read_bytes()).decode("ascii")
+    camera_icon = base64.b64encode(b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.7"><rect x="3" y="6" width="12" height="12" rx="3"/><path d="m15 10 6-3v10l-6-3"/></svg>').decode("ascii")
     paused = st.session_state.get("tutorials_paused", False)
     st.html(f'''
         <section class="how-section{' motion-paused' if paused else ''}" id="how-it-works" aria-labelledby="how-title">
@@ -40,13 +41,13 @@ with st.container(key="landing"):
               </div>
               <h3>Choose your alphabet.</h3><p>Open the workspace and select SIBI or BISINDO.</p></li>
             <li><span class="step-number" aria-hidden="true">02</span>
-              <div class="camera-motion motion-stage" role="img" aria-label="Illustration, not a live camera: cursor clicks Start, then a sample SIBI hand pose appears with a reminder to hold steady.">
+              <div class="camera-motion motion-stage" role="img" aria-label="Illustration, not a live camera: cursor turns the camera icon from off to on, then a sample SIBI hand pose appears with a reminder to hold steady.">
                 <span class="motion-example" aria-hidden="true">Illustration</span>
                 <div class="camera-demo" aria-hidden="true">
-                  <span class="demo-start">START</span>
                   <div class="demo-pose"><img src="data:image/jpeg;base64,{hand_image}" alt=""><span class="pose-corner corner-left"></span><span class="pose-corner corner-right"></span></div>
                   <span class="demo-hold">Hold steady</span>
                 </div>
+                <span class="demo-camera" aria-hidden="true"><img src="data:image/svg+xml;base64,{camera_icon}" alt=""><span class="demo-camera-slash"></span></span>
                 <span class="motion-cursor" aria-hidden="true"></span>
               </div>
               <h3>Make a sign.</h3><p>Start the camera. Keep your hand sign steady and in view.</p></li>
