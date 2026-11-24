@@ -29,9 +29,16 @@ body:has(.st-key-landing) [data-testid="stMainBlockContainer"] {
 .st-key-landing button:hover {transform:translateY(-2px); box-shadow:0 5px 14px #20211f15;}
 .st-key-landing button[kind="primary"] p {color:#fff;}
 .landing-nav a:focus-visible,.mobile-nav summary:focus-visible {outline:2px solid #596347; outline-offset:3px;}
-.landing-placeholder {border-top:1px solid #24252214; padding:48px 0; scroll-margin-top:24px;}
-.landing-placeholder h2 {font-size:24px; letter-spacing:-.5px;}
-.landing-placeholder p {font-size:14px; color:#687168;}
+.st-key-landing-faq {border-top:1px solid #24252214; padding:64px 0 24px; gap:0;}
+.faq-heading {scroll-margin-top:24px; margin-bottom:28px;}
+.faq-heading h2 {font-size:clamp(30px,3vw,42px); font-weight:650; letter-spacing:-1.5px; margin:0; padding:0;}
+.st-key-landing-faq [data-testid="stExpander"] details {border:0; border-bottom:1px solid #24252214; border-radius:0; background:transparent;}
+.st-key-landing-faq [data-testid="stExpander"] summary {padding:22px 0; border-radius:0;}
+.st-key-landing-faq [data-testid="stExpander"] summary p {font-size:16px; font-weight:500;}
+.st-key-landing-faq [data-testid="stExpander"] summary:focus-visible {outline:2px solid #596347; outline-offset:3px;}
+.st-key-landing-faq [data-testid="stExpanderDetails"] {padding:0 28px 22px;}
+.st-key-landing-faq [data-testid="stExpanderDetails"] p {font-size:15px; line-height:1.8; color:#5d655f; max-width:820px;}
+.st-key-landing-faq a {color:#242522; text-underline-offset:4px;}
 .benchmark-section {border-top:1px solid #24252214; padding:64px 0; scroll-margin-top:24px;}
 .benchmark-heading h2 {font-size:clamp(30px,3vw,42px); font-weight:650; letter-spacing:-1.5px; margin:0 0 12px; padding:0;}
 .benchmark-heading > p {font-size:16px; color:#687168; margin:0;}
@@ -180,6 +187,7 @@ body:has(.st-key-landing) [data-testid="stMainBlockContainer"] {
  .how-section {padding:40px 0;}
  .benchmark-section {padding:40px 0;}
  .benefits-section {grid-template-columns:1fr; gap:32px; padding:40px 0;}
+ .st-key-landing-faq {padding:40px 0 16px;}
  .benchmark-tables,.benchmark-verdict {grid-template-columns:1fr; gap:28px;}
  .benchmark-dataset th,.benchmark-dataset td {padding:14px 6px; font-size:12px;}
  .how-steps {grid-template-columns:1fr; gap:28px; margin:32px 0;}

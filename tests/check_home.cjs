@@ -14,7 +14,7 @@ const assert = require('node:assert/strict');
     assert.equal(await page.locator('.hero-demo, .hero-eyebrow, .landing-note').count(),0);
     assert.equal(await page.locator('#how-it-works ol > li').count(),3);
     assert.equal(await page.locator('#how-it-works').getByText('Coming soon.',{exact:true}).count(),0);
-     assert.equal(await page.locator('.landing-placeholder').count(),1);
+     assert.equal(await page.locator('.landing-placeholder').count(),0);
      assert.equal(await page.locator('#benefits .benefits-list > li').count(),3);
      assert.equal(await page.locator('#benefits').getByText('Coming soon.',{exact:true}).count(),0);
     assert.equal(await page.locator('#benchmark table').count(),2);
@@ -110,6 +110,32 @@ const assert = require('node:assert/strict');
       assert(await page.getByTestId('stMain').evaluate(el=>el.scrollWidth<=el.clientWidth),'Benefits must not overflow horizontally');
       await page.screenshot({path:`logs/design/benefits-${width}.png`});
      }
+     if(anchor==='faq') {
+      const faq=page.locator('.st-key-landing-faq');
+      const entries=faq.locator('details');
+      assert.equal(await entries.count(),6);
+      assert.equal(await faq.locator('details[open]').count(),0,'FAQ starts collapsed');
+      for(const entry of await entries.all()) {
+       const summary=entry.locator('summary');
+       await summary.focus();
+       await summary.press('Enter');
+       await page.waitForFunction(el=>el.open,await entry.elementHandle());
+       assert(await entry.evaluate(el=>el.open),'Keyboard opens FAQ');
+       assert(await entry.getByTestId('stExpanderDetails').isVisible());
+       await summary.press('Space');
+       await page.waitForFunction(el=>!el.open,await entry.elementHandle());
+       assert(!(await entry.evaluate(el=>el.open)),'Keyboard closes FAQ');
+      }
+      await entries.nth(4).locator('summary').click();
+      assert(await faq.getByText(/Frames are sent to the app server/).isVisible());
+      await entries.nth(5).locator('summary').click();
+      assert(await faq.getByText(/sends your transcript to Google/).isVisible());
+      assert(await page.getByTestId('stMain').evaluate(el=>el.scrollWidth<=el.clientWidth),'FAQ must not overflow');
+      await page.locator('#faq').evaluate(el=>el.scrollIntoView());
+      await faq.screenshot({path:`logs/design/faq-${width}.png`,animations:'disabled'});
+      await entries.nth(4).locator('summary').click();
+      await entries.nth(5).locator('summary').click();
+     }
      if(anchor==='benchmark') {
       const tables=await page.locator('.benchmark-dataset').all();
       const boxes=await Promise.all(tables.map(table=>table.boundingBox()));
@@ -120,7 +146,8 @@ const assert = require('node:assert/strict');
       await page.screenshot({path:`logs/design/benchmark-${width}.png`});
      }
     }
-    await page.locator('.evaluation-link').click();
+     await page.locator('.st-key-landing-faq details').nth(3).locator('summary').click();
+     await page.locator('.st-key-landing-faq').getByRole('link',{name:/Model evaluation/}).click();
     await page.getByRole('heading',{name:'Why we chose SVM.',exact:true}).waitFor();
     assert.equal(new URL(page.url()).pathname,'/model-evaluation');
     await page.getByTestId('stSidebar').waitFor({state:'hidden'});

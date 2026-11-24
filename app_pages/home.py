@@ -94,5 +94,23 @@ with st.container(key="landing"):
         </section>
     ''')
 
-    # ponytail: FAQ anchor only; replace when section content is approved.
-    st.html('<section class="landing-placeholder" id="faq" aria-label="FAQ"><h2>FAQ</h2><p>Coming soon.</p></section>')
+    with st.container(key="landing-faq"):
+        st.html('<header id="faq" class="faq-heading"><h2>Questions? Start here.</h2></header>')
+        for question, answer in [
+            ("Does sesama translate full sign language?",
+             "No. sesama recognizes static alphabet poses in SIBI and BISINDO. It does not interpret moving gestures, facial expressions, or sign-language grammar."),
+            ("What do I need to get started?",
+             "A camera and a browser with camera permission. Open the workspace, choose SIBI or BISINDO, and turn on the camera. Keep your hands fully in view with even lighting. No microphone is needed."),
+            ("What if a letter is recognized incorrectly?",
+             "Check the selected alphabet, keep your pose steady, and adjust lighting or framing. Review the transcript and edit any incorrect letters; recognition is not always correct."),
+            ("How accurate is it, and why SVM?",
+             "SVM achieved 95.92% accuracy on the SIBI test split and 95.95% on BISINDO. It had the highest weighted F1 among the three compared models. These offline scores do not guarantee webcam accuracy. Explore the full comparison and its limits below."),
+            ("Where do my camera frames go?",
+             "Frames are sent to the app server for recognition, not processed only in your browser. The app does not save camera images. Turn off the camera to stop capture."),
+            ("Do I need an internet connection?",
+             "The hosted app requires internet. Read aloud also requires internet and sends your transcript to Google through gTTS for Indonesian pronunciation. Camera recognition does not use your microphone."),
+        ]:
+            with st.expander(question):
+                st.markdown(answer)
+                if question == "How accurate is it, and why SVM?":
+                    st.page_link("app_pages/evaluation.py", label="Model evaluation", icon=":material/arrow_outward:")
