@@ -32,6 +32,33 @@ body:has(.st-key-landing) [data-testid="stMainBlockContainer"] {
 .landing-placeholder {border-top:1px solid #24252214; padding:48px 0; scroll-margin-top:24px;}
 .landing-placeholder h2 {font-size:24px; letter-spacing:-.5px;}
 .landing-placeholder p {font-size:14px; color:#687168;}
+.benchmark-section {border-top:1px solid #24252214; padding:64px 0; scroll-margin-top:24px;}
+.benchmark-heading h2 {font-size:clamp(30px,3vw,42px); font-weight:650; letter-spacing:-1.5px; margin:0 0 12px; padding:0;}
+.benchmark-heading > p {font-size:16px; color:#687168; margin:0;}
+.benchmark-tables {display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:32px; margin:40px 0 32px;}
+.benchmark-dataset table {width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums;}
+.benchmark-dataset caption {text-align:left; font-size:18px; font-weight:650; padding-bottom:20px; color:#242522;}
+.benchmark-dataset th,.benchmark-dataset td {padding:16px 12px; border-bottom:1px solid #24252214; text-align:right; white-space:nowrap;}
+.benchmark-dataset th:first-child {text-align:left; white-space:normal;}
+.benchmark-dataset thead th {font-size:12px; font-weight:500; color:#687168;}
+.benchmark-dataset tbody th {font-weight:500;}
+.metric-weight {display:block; font-size:10px;}
+.benchmark-selected {background:#e4e9df;}
+.benchmark-selected th,.benchmark-selected td {font-weight:650;}
+.selected-tag {display:block; font-size:10px; color:#526546; font-weight:500; margin-top:4px;}
+.benchmark-verdict {display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:start;}
+.benchmark-verdict h3 {font-size:23px; font-weight:600; letter-spacing:-.6px; padding:0; margin:0;}
+.benchmark-verdict p {font-size:15px; line-height:1.7; color:#5d655f; margin:0; max-width:500px;}
+.benchmark-caveat {font-size:12px; color:#687168; margin:24px 0;}
+.benchmark-method {border-top:1px solid #24252214; border-bottom:1px solid #24252214;}
+.benchmark-method summary {cursor:pointer; padding:18px 4px; font-size:14px; transition:color .2s ease;}
+.benchmark-method summary:hover {color:#526546;}
+.benchmark-method summary:focus-visible {outline:2px solid #596347; outline-offset:3px;}
+.method-content {max-width:880px; padding:0 4px 20px;}
+.method-content h3 {font-size:16px; padding:16px 0 8px; margin:0;}
+.method-content p,.method-content li {font-size:13px; line-height:1.8; color:#5d655f;}
+.method-content ul {padding-left:20px;}
+.method-content .benchmark-source {font-size:11px; overflow-wrap:anywhere;}
 .how-section {border-top:1px solid #24252214; padding:64px 0; scroll-margin-top:24px;}
 .how-heading h2 {font-size:clamp(30px,3vw,42px); font-weight:650; letter-spacing:-1.5px; margin:0 0 12px; padding:0;}
 .how-heading > p {font-size:16px; color:#687168; margin:0;}
@@ -135,6 +162,9 @@ body:has(.st-key-landing) [data-testid="stMainBlockContainer"] {
  .st-key-landing h1 {letter-spacing:-2px;}
  .st-key-landing-hero [data-testid="stMarkdownContainer"] > p {font-size:16px;}
  .how-section {padding:40px 0;}
+ .benchmark-section {padding:40px 0;}
+ .benchmark-tables,.benchmark-verdict {grid-template-columns:1fr; gap:28px;}
+ .benchmark-dataset th,.benchmark-dataset td {padding:14px 6px; font-size:12px;}
  .how-steps {grid-template-columns:1fr; gap:28px; margin:32px 0;}
  .step-number {margin-bottom:16px;}
 }

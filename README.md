@@ -1,6 +1,6 @@
 # Demo SIBI & BISINDO
 
-Home `/` menampilkan Navbar, Hero, dan How it works **sesama**. Route fitur: `/sign-to-text`, `/text-to-graphics`, dan `/help`. Landing tidak menyalakan kamera; Benchmark, Benefits, dan FAQ masih placeholder berjangkar. Navigasi mobile memakai menu lipat. Screenshot/regresi landing: `node tests/check_home.cjs` dengan Playwright dan `APP_URL` server uji.
+Home `/` menampilkan Navbar, Hero, How it works, dan Benchmark **sesama**. Route fitur: `/sign-to-text`, `/text-to-graphics`, dan `/help`. Landing tidak menyalakan kamera; Benefits dan FAQ masih placeholder berjangkar. Benchmark memakai output notebook tersimpan di `assets/benchmark.json`, bukan evaluasi webcam; rincian metode tersedia pada Evaluation details. Periksa data dengan `python tests/test_benchmark.py` (mencocokkan notebook bila tersedia lokal). Navigasi mobile memakai menu lipat. Screenshot/regresi landing: `node tests/check_home.cjs` dengan Playwright dan `APP_URL` server uji.
 
 Nama sementara aplikasi **kata**. UI Inggris: **Sign to text**, **Text to graphics**, dan **Help**. Sidebar hanya navigasi; pengaturan pengenalan berada di workspace. FPS/inferensi tersedia di **Diagnostics**.
 

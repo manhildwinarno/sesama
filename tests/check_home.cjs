@@ -14,7 +14,10 @@ const assert = require('node:assert/strict');
     assert.equal(await page.locator('.hero-demo, .hero-eyebrow, .landing-note').count(),0);
     assert.equal(await page.locator('#how-it-works ol > li').count(),3);
     assert.equal(await page.locator('#how-it-works').getByText('Coming soon.',{exact:true}).count(),0);
-    assert.equal(await page.locator('.landing-placeholder').count(),3);
+    assert.equal(await page.locator('.landing-placeholder').count(),2);
+    assert.equal(await page.locator('#benchmark table').count(),2);
+    assert.equal(await page.locator('#benchmark tbody tr').count(),6);
+    assert.deepEqual(await page.locator('.benchmark-selected td').allTextContents(),['95.92%','95.84%','95.95%','95.92%']);
     assert(await page.getByTestId('stMainBlockContainer').evaluate(el=>el.scrollHeight<=el.clientHeight+1),'White panel must contain all sections');
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Home overflows viewport');
     const main=page.getByTestId('stMain');
@@ -97,6 +100,19 @@ const assert = require('node:assert/strict');
         assert.equal(await page.locator('.demo-pose').evaluate(el=>el.getAnimations().length),0);
         assert.equal(await page.locator('.text-motion').evaluate(el=>el.getAnimations({subtree:true}).length),0);
       await page.emulateMedia({reducedMotion:'no-preference'});
+     }
+     if(anchor==='benchmark') {
+      const tables=await page.locator('.benchmark-dataset').all();
+      const boxes=await Promise.all(tables.map(table=>table.boundingBox()));
+      assert(width<768 ? boxes[1].y>boxes[0].y : Math.abs(boxes[1].y-boxes[0].y)<1);
+      assert(await page.locator('.benchmark-method .method-content').isHidden());
+      await page.locator('.benchmark-method summary').click();
+      await page.locator('.method-content').waitFor();
+      assert(await page.locator('.method-content').innerText().then(text=>text.includes('No separate final holdout')));
+      assert(await page.getByTestId('stMain').evaluate(el=>el.scrollWidth<=el.clientWidth),'Benchmark details overflow scroll area');
+      await page.locator('.benchmark-method summary').click();
+      await page.locator('#benchmark').evaluate(el=>el.scrollIntoView());
+      await page.screenshot({path:`logs/design/benchmark-${width}.png`});
      }
     }
     await page.locator('.how-bottom a').click();

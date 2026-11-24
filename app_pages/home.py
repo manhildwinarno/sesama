@@ -1,4 +1,5 @@
 import base64
+import json
 from pathlib import Path
 
 import streamlit as st
@@ -63,6 +64,40 @@ with st.container(key="landing"):
         </section>
     ''')
 
+    benchmark = json.loads((Path(__file__).resolve().parents[1] / "assets/benchmark.json").read_text(encoding="utf-8"))
+    tables = []
+    metrics = []
+    for dataset in benchmark["datasets"]:
+        winner = max(dataset["models"], key=lambda model: model["weighted_f1"])
+        rows = []
+        for model in dataset["models"]:
+            selected = ' class="benchmark-selected"' if model is winner else ''
+            tag = '<span class="selected-tag">Selected</span>' if model is winner else ''
+            rows.append(f'<tr{selected}><th scope="row">{model["name"]}{tag}</th><td>{model["accuracy"]:.2%}</td><td>{model["weighted_f1"]:.2%}</td></tr>')
+        tables.append(f'<div class="benchmark-dataset"><table><caption>{dataset["name"]}</caption><thead><tr><th scope="col">Model</th><th scope="col">Accuracy</th><th scope="col">F1 <span class="metric-weight">(weighted)</span></th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>')
+        metrics.append(f'<li><strong>{dataset["name"]}</strong>: {dataset["train_samples"]:,} train / {dataset["test_samples"]:,} test samples, {dataset["features"]} landmark features.</li>')
+    st.html('''
+        <section class="benchmark-section" id="benchmark" aria-labelledby="benchmark-title">
+          <div class="benchmark-heading"><h2 id="benchmark-title">Why SVM? The results.</h2><p>Three models. The same split. One clear choice.</p></div>
+          <div class="benchmark-tables">''' + ''.join(tables) + '''</div>
+          <div class="benchmark-verdict"><h3>Highest F1. Both alphabets.</h3><p>SVM with an RBF kernel scored the highest weighted F1 on both datasets. That is why it powers recognition in sesama.</p></div>
+          <p class="benchmark-caveat">Offline test results, not guaranteed webcam accuracy.</p>
+          <details class="benchmark-method"><summary>Evaluation details</summary>
+            <div class="method-content"><h3>How we compared</h3>
+              <p>Exact duplicate rows removed. Stratified 80/20 split, random_state=42. StandardScaler fitted on training data only; all three models used the same scaled train/test data for each alphabet.</p>
+              <ul>''' + ''.join(metrics) + '''</ul>
+              <p>Accuracy measures correct predictions. Weighted F1 balances precision and recall per class, weighted by class sample count; it can hide weaker results on less frequent classes.</p>
+              <h3>Model settings</h3>
+              <ul><li>SVM: RBF kernel, C=10, gamma=scale, probability=True.</li><li>Random Forest: 100 trees, max_depth=15.</li><li>XGBoost: 100 estimators, learning_rate=0.1, max_depth=6.</li></ul>
+              <h3>What these scores do not prove</h3>
+              <p>The notebook selected the model using this same test split. No separate final holdout, cross-validation, signer-independent evaluation, or inference-speed comparison is reported here. These results do not establish that SVM is always best or fastest.</p>
+              <p>Live results also depend on lighting, pose, camera orientation, and connection quality. Static alphabets only, not moving gestures or full sign-language translation.</p>
+              <p class="benchmark-source">Source: training notebook 03_pemodelan_dan_evaluasi.ipynb, saved evaluation outputs. Percentages rounded to two decimals.</p>
+            </div>
+          </details>
+        </section>
+    ''')
+
     # ponytail: remaining anchors only; replace placeholders when section content is approved.
-    for anchor, label in SECTIONS[1:]:
+    for anchor, label in SECTIONS[2:]:
         st.html(f'<section class="landing-placeholder" id="{anchor}" aria-label="{label}"><h2>{label}</h2><p>Coming soon.</p></section>')
