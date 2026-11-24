@@ -9,7 +9,7 @@ body:has(.st-key-landing) [data-testid="stMain"]::-webkit-scrollbar {width:8px;}
 body:has(.st-key-landing) [data-testid="stMain"]::-webkit-scrollbar-thumb {background:#9099aa; border-radius:8px;}
 body:has(.st-key-landing) div:has(> [data-testid="stMain"]) {padding-right:0;}
 body:has(.st-key-landing) [data-testid="stMainBlockContainer"] {
- margin:16px; width:calc(100% - 32px); min-height:calc(100dvh - 32px);
+ margin:16px; width:calc(100% - 32px); min-height:calc(100dvh - 32px); flex:0 0 auto;
  padding:30px 48px 24px; background:#f5f7f6f5; border-radius:28px;
 }
 .st-key-landing {max-width:1240px; margin:auto;}
@@ -32,6 +32,20 @@ body:has(.st-key-landing) [data-testid="stMainBlockContainer"] {
 .landing-placeholder {border-top:1px solid #24252214; padding:48px 0; scroll-margin-top:24px;}
 .landing-placeholder h2 {font-size:24px; letter-spacing:-.5px;}
 .landing-placeholder p {font-size:14px; color:#687168;}
+.how-section {border-top:1px solid #24252214; padding:64px 0; scroll-margin-top:24px;}
+.how-heading h2 {font-size:clamp(30px,3vw,42px); font-weight:650; letter-spacing:-1.5px; margin:0 0 12px; padding:0;}
+.how-heading > p {font-size:16px; color:#687168; margin:0;}
+.how-steps {list-style:none; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:32px; margin:48px 0 40px; padding:0;}
+.how-steps li {border-top:1px solid #24252226; padding-top:20px;}
+.step-number {display:block; font-size:13px; color:#687168; font-variant-numeric:tabular-nums; margin-bottom:28px;}
+.how-steps h3 {font-size:21px; font-weight:600; letter-spacing:-.6px; margin:0 0 12px; padding:0;}
+.how-steps p {font-size:15px; line-height:1.7; color:#5d655f; margin:0; max-width:300px;}
+.how-bottom {display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px;}
+.how-bottom p {font-size:12px; color:#687168; margin:0;}
+.how-bottom a {font-size:13px; color:#5d655f; text-decoration:none; text-underline-offset:4px;}
+.how-bottom a span {color:#242522; font-weight:600;}
+.how-bottom a:hover {text-decoration:underline;}
+.how-bottom a:focus-visible {outline:2px solid #596347; outline-offset:4px;}
 @media(max-width:900px) {
  .landing-nav {flex-wrap:wrap; gap:16px;}
  .desktop-links {display:none;}
@@ -47,5 +61,8 @@ body:has(.st-key-landing) [data-testid="stMainBlockContainer"] {
  .st-key-landing-hero {padding:70px 0 80px;}
  .st-key-landing h1 {letter-spacing:-2px;}
  .st-key-landing-hero [data-testid="stMarkdownContainer"] > p {font-size:16px;}
+ .how-section {padding:40px 0;}
+ .how-steps {grid-template-columns:1fr; gap:28px; margin:32px 0;}
+ .step-number {margin-bottom:16px;}
 }
 @media(prefers-reduced-motion:reduce) {.landing-nav a,.st-key-landing button {transition:none;transform:none;}}

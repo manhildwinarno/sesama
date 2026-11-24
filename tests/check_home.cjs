@@ -12,6 +12,10 @@ const assert = require('node:assert/strict');
    assert.equal(await page.locator('video').count(),0,'Home must not mount camera');
    await page.getByTestId('stSidebar').waitFor({state:'hidden'});
     assert.equal(await page.locator('.hero-demo, .hero-eyebrow, .landing-note').count(),0);
+    assert.equal(await page.locator('#how-it-works ol > li').count(),3);
+    assert.equal(await page.locator('#how-it-works').getByText('Coming soon.',{exact:true}).count(),0);
+    assert.equal(await page.locator('.landing-placeholder').count(),3);
+    assert(await page.getByTestId('stMainBlockContainer').evaluate(el=>el.scrollHeight<=el.clientHeight+1),'White panel must contain all sections');
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Home overflows viewport');
     const main=page.getByTestId('stMain');
     assert(await main.evaluate(el=>getComputedStyle(el).scrollbarGutter==='stable'));
@@ -32,7 +36,17 @@ const assert = require('node:assert/strict');
      await page.waitForFunction(id=>location.hash==='#'+id,anchor);
      const box=await page.locator('#'+anchor).boundingBox();
      assert(box.y>=0 && box.y<900,'Anchor target must scroll into view');
+     if(anchor==='how-it-works') {
+      const steps=await page.locator('.how-steps li').all();
+      const boxes=await Promise.all(steps.map(step=>step.boundingBox()));
+      assert(width<768 ? boxes[1].y>boxes[0].y : Math.abs(boxes[1].y-boxes[0].y)<1,'Steps must stack only on mobile');
+      await page.screenshot({path:`logs/design/how-it-works-${width}.png`});
+     }
     }
+    await page.locator('.how-bottom a').click();
+    await page.getByRole('textbox',{name:'Text to spell',exact:true}).waitFor();
+    assert(new URL(page.url()).pathname==='/text-to-graphics');
+    await page.goto(process.env.APP_URL || 'http://localhost:8519');
     await page.locator('.nav-launch').click();
     await page.getByRole('button',{name:'START',exact:true}).waitFor();
     assert(new URL(page.url()).pathname==='/sign-to-text');
