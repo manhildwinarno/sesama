@@ -14,7 +14,9 @@ const assert = require('node:assert/strict');
     assert.equal(await page.locator('.hero-demo, .hero-eyebrow, .landing-note').count(),0);
     assert.equal(await page.locator('#how-it-works ol > li').count(),3);
     assert.equal(await page.locator('#how-it-works').getByText('Coming soon.',{exact:true}).count(),0);
-    assert.equal(await page.locator('.landing-placeholder').count(),2);
+     assert.equal(await page.locator('.landing-placeholder').count(),1);
+     assert.equal(await page.locator('#benefits .benefits-list > li').count(),3);
+     assert.equal(await page.locator('#benefits').getByText('Coming soon.',{exact:true}).count(),0);
     assert.equal(await page.locator('#benchmark table').count(),2);
     assert.equal(await page.locator('#benchmark tbody tr').count(),6);
     assert.deepEqual(await page.locator('.benchmark-selected td').allTextContents(),['95.92%','95.84%','95.95%','95.92%']);
@@ -100,6 +102,13 @@ const assert = require('node:assert/strict');
         assert.equal(await page.locator('.demo-pose').evaluate(el=>el.getAnimations().length),0);
         assert.equal(await page.locator('.text-motion').evaluate(el=>el.getAnimations({subtree:true}).length),0);
       await page.emulateMedia({reducedMotion:'no-preference'});
+     }
+     if(anchor==='benefits') {
+      const heading=await page.locator('.benefits-heading').boundingBox();
+      const list=await page.locator('.benefits-list').boundingBox();
+      assert(width<768 ? list.y>=heading.y+heading.height : list.x>=heading.x+heading.width,'Benefits stack only on mobile');
+      assert(await page.getByTestId('stMain').evaluate(el=>el.scrollWidth<=el.clientWidth),'Benefits must not overflow horizontally');
+      await page.screenshot({path:`logs/design/benefits-${width}.png`});
      }
      if(anchor==='benchmark') {
       const tables=await page.locator('.benchmark-dataset').all();

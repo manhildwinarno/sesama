@@ -83,6 +83,16 @@ with st.container(key="landing"):
         </section>
     ''')
 
-    # ponytail: remaining anchors only; replace placeholders when section content is approved.
-    for anchor, label in SECTIONS[2:]:
-        st.html(f'<section class="landing-placeholder" id="{anchor}" aria-label="{label}"><h2>{label}</h2><p>Coming soon.</p></section>')
+    st.html('''
+        <section class="benefits-section" id="benefits" aria-labelledby="benefits-title">
+          <div class="benefits-heading"><h2 id="benefits-title">Small gestures.<br>More possibilities.</h2><p>A little help, letter by letter.</p></div>
+          <ul class="benefits-list">
+            <li><h3>Two alphabets. One place.</h3><p>Explore static SIBI and BISINDO letters in the same workspace.</p></li>
+            <li><h3>Your words. Your control.</h3><p>Review recognized letters, add spaces, and edit your text before sharing.</p></li>
+            <li><h3>Text, with a voice.</h3><p>Let your finished text be heard with online text-to-speech.</p></li>
+          </ul>
+        </section>
+    ''')
+
+    # ponytail: FAQ anchor only; replace when section content is approved.
+    st.html('<section class="landing-placeholder" id="faq" aria-label="FAQ"><h2>FAQ</h2><p>Coming soon.</p></section>')
