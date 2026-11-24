@@ -84,11 +84,16 @@ with center, st.container(key="camera-stage"):
         st.caption("Camera frames are sent to the app server for recognition. Images are not saved.")
         camera_key = f"local-camera-{mode}"
         def camera_options():
-            state = st.session_state[camera_key]
+            state = st.session_state.get(camera_key)
+            if state is None:
+                return
             st.session_state.preview_mirror = state.mirror
             st.session_state.preview_landmarks = state.show
         def receive_frame():
-            payload = st.session_state[camera_key].frame
+            state = st.session_state.get(camera_key)
+            if state is None or st.session_state.engine is None:
+                return
+            payload = state.frame
             if not isinstance(payload, dict) or not isinstance(payload.get("sequence"), int):
                 return
             st.session_state.frame_ack = payload["sequence"]
@@ -109,10 +114,14 @@ with center, st.container(key="camera-stage"):
 
         @st.fragment
         def camera_panel():
+            mirror = st.session_state.get("preview_mirror", True)
+            show_landmarks = st.session_state.get("preview_landmarks", False)
+            current = st.session_state.engine
+            current.configure(flip, reverse if mode == "BISINDO" else False, mirror, threshold, hold, show_landmarks)
             camera(key=camera_key, data={
                 "transport": "streamlit", "mirror": mirror, "show": show_landmarks,
                 "ack": st.session_state.get("frame_ack", 0),
-                "overlay": st.session_state.engine.overlay_snapshot(),
+                "overlay": current.overlay_snapshot(),
             }, default={"mirror": mirror, "show": show_landmarks},
                 on_frame_change=receive_frame, on_mirror_change=camera_options, on_show_change=camera_options)
         camera_panel()

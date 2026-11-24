@@ -80,7 +80,7 @@ class VideoEngine:
         with self.lock:
             points, stamp, flip = self.overlay
             return {"points": points if monotonic() - stamp <= 1.0 else (),
-                    "stamp": stamp, "flip": flip}
+                    "stamp": stamp, "flip": flip, "age": max(0, monotonic() - stamp)}
 
     def snapshot(self):
         with self.lock:

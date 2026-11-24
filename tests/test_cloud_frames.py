@@ -7,6 +7,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import cv2
 import numpy as np
 from local_camera import decode_frame
+from video_engine import VideoEngine
+from threading import Lock
+from time import monotonic
 
 def jpeg(height, width):
     ok, raw = cv2.imencode('.jpg', np.zeros((height, width, 3), np.uint8))
@@ -14,6 +17,11 @@ def jpeg(height, width):
     return base64.b64encode(raw).decode('ascii')
 
 assert decode_frame(jpeg(480, 640)).shape == (480, 640, 3)
+engine = VideoEngine.__new__(VideoEngine)
+engine.lock = Lock()
+engine.overlay = (((0.2, 0.4),), monotonic() - 2, False)
+overlay = engine.overlay_snapshot()
+assert overlay['age'] >= 2 and not overlay['points'], 'Stale overlay must expire'
 for payload in (None, {}, '!', 'A' * 600_001, base64.b64encode(b'not jpeg').decode(), jpeg(481, 640)):
     try:
         decode_frame(payload)

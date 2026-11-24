@@ -232,7 +232,7 @@ export default function({parentElement, data, setStateValue, setTriggerValue}) {
     if(canvas.width!==w || canvas.height!==h) {canvas.width=w;canvas.height=h;}
     const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,w,h);
     const o=s.overlay;
-    if(s.show && o && performance.now()-s.received<900) {
+    if(s.show && o && performance.now()-s.received<350) {
      ctx.strokeStyle='#DDEAE5';ctx.fillStyle='#63CEB5';ctx.lineWidth=2;
      for(const hand of o.points) {
       const points=hand.map(([x,y])=>[(o.flip?1-x:x)*w,y*h]);
@@ -248,13 +248,22 @@ export default function({parentElement, data, setStateValue, setTriggerValue}) {
   s.draw();
  }
  if(data.ack===s.sequence) {s.waiting=false;}
- root.querySelector('.mirror').onclick=()=>setStateValue('mirror',!s.data.mirror);
- root.querySelector('.landmarks').onclick=()=>setStateValue('show',!s.data.show);
+  root.querySelector('.mirror').onclick=()=>{
+   const next=!s.data.mirror; s.data={...s.data,mirror:next};
+   root.querySelector('.mirror').setAttribute('aria-pressed',String(next));
+   video.style.transform=canvas.style.transform=next?'scaleX(-1)':'none';
+   setStateValue('mirror',next);
+  };
+  root.querySelector('.landmarks').onclick=()=>{
+   const next=!s.data.show; s.data={...s.data,show:next}; s.show=next;
+   root.querySelector('.landmarks').setAttribute('aria-pressed',String(next));
+   setStateValue('show',next);
+  };
  root.querySelector('.mirror').setAttribute('aria-pressed',String(data.mirror));
  root.querySelector('.landmarks').setAttribute('aria-pressed',String(data.show));
  s.data=data; s.show=data.show;
  video.style.transform=canvas.style.transform=data.mirror?'scaleX(-1)':'none';
- if(data.overlay && data.overlay.stamp!==s.stamp) {s.stamp=data.overlay.stamp;s.overlay=data.overlay;s.received=performance.now();}
+  if(data.overlay && data.overlay.stamp!==s.stamp) {s.stamp=data.overlay.stamp;s.overlay=data.overlay;s.received=performance.now()-(data.overlay.age||0)*1000;}
  return ()=>{s.busy=false;s.stop();delete root.cameraState;};
 }
 """,
