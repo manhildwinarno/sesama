@@ -49,7 +49,7 @@ with workspace:
 with settings:
     with st.container(border=True, key="settings-card"):
         st.subheader("Recognition")
-        mode = st.segmented_control("Sign language", ["SIBI", "BISINDO"], default="SIBI", required=True, key="mode", persist_state="session")
+        mode = st.segmented_control("Sign language", ["SIBI", "BISINDO"], default="SIBI", required=True, key="mode", persist_state="session", width="stretch")
         threshold = st.slider("Confidence (%)", 40, 95, 65, key="threshold", persist_state="session",
                               help="Minimum score for automatic capture; not model accuracy.")
         hold = st.slider("Hold duration (s)", 0.2, 2.0, 0.4, key="hold", persist_state="session")

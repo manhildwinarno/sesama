@@ -47,6 +47,7 @@ const fs = require('node:fs');
     assert(choiceBoxes[0].x + choiceBoxes[0].width <= choiceBoxes[1].x + 1, 'Language choices overlap');
     for (const choice of choices) {
       assert(await choice.locator('p').evaluate(e => e.scrollWidth <= e.clientWidth + 1), 'Language label is truncated');
+      assert(await choice.evaluate(e => e.clientHeight >= 40 && parseFloat(getComputedStyle(e).paddingLeft) >= 12), 'Language choice is too cramped');
     }
     await page.screenshot({path:'logs/design/isyarat-expanded.png',fullPage:true});
     assert(await track.evaluate(t => t.readyState === 'live'), 'Expanding navigation stopped camera');

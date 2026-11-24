@@ -11,7 +11,7 @@ with st.container(key="workspace"):
     left, right = st.columns([1, 3], gap="small")
     with left, st.container(border=True, key="visual-input"):
         st.subheader("Text to graphics")
-        mode = st.segmented_control("Sign language", ["BISINDO", "SIBI"], default="BISINDO", required=True, key="visual_mode", persist_state="session")
+        mode = st.segmented_control("Sign language", ["BISINDO", "SIBI"], default="BISINDO", required=True, key="visual_mode", persist_state="session", width="stretch")
         text = st.text_input("Text to spell", max_chars=120, placeholder="Type a word…", key="visual_text", persist_state="session", help="Press Enter. A–Z only; spaces separate words. Up to 120 characters.")
         st.button("Clear", icon=":material/backspace:", on_click=lambda: st.session_state.update(visual_text=""))
     with right, st.container(border=True, key="visual-output"):

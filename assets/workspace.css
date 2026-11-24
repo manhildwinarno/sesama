@@ -9,8 +9,8 @@
 .st-key-brand p {font-size:38px; line-height:1.2; text-align:center; margin:0; letter-spacing:-1.5px;}
 .st-key-brand strong {font-weight:800;}
 [data-testid="stButtonGroup"] [role="radiogroup"] {background:#f1f2f4; border-radius:12px; padding:5px; gap:4px; display:flex; flex-wrap:nowrap; width:100%; box-sizing:border-box;}
-[data-testid="stButtonGroup"] button[role="radio"] {flex:1 1 auto; min-width:0; padding-inline:4px; white-space:nowrap;}
-[data-testid="stButtonGroup"] button[role="radio"] p {font-size:clamp(11px, .9vw, 14px);}
+[data-testid="stButtonGroup"] button[role="radio"] {flex:1 1 0; min-width:0; min-height:40px; padding:8px 12px; white-space:nowrap;}
+[data-testid="stButtonGroup"] button[role="radio"] p {font-size:14px;}
 [data-testid="stButtonGroup"] button {border:0 !important; border-radius:9px !important; background:transparent !important; box-shadow:none; transition:background .2s ease, box-shadow .2s ease, color .2s ease;}
 [data-testid="stButtonGroup"] button:hover {background:#e5e7e9 !important;}
 [data-testid="stButtonGroup"] button[aria-checked="true"] {background:#fff !important; color:#202322; box-shadow:0 2px 6px #0000000d;}
@@ -62,6 +62,14 @@ div:has(> [data-testid="stMain"]) {padding-right:16px; box-sizing:border-box;}
 .st-key-nav-active [data-testid="stPageLink"] a {background:#111 !important; color:#fff !important;}
 .st-key-nav-active [data-testid="stPageLink"] a:hover {background:#32352e !important;}
 .st-key-workspace {max-width: 1320px; margin-inline: auto;}
+.st-key-workspace [data-testid="stColumn"]:has(.st-key-settings-card),
+.st-key-workspace [data-testid="stColumn"]:has(.st-key-visual-input) {min-width:240px;}
+@media (min-width:768px) {
+  .st-key-workspace [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] .st-key-settings-card),
+  .st-key-workspace [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] .st-key-visual-input) {flex-wrap:nowrap;}
+  .st-key-workspace [data-testid="stColumn"]:has(.st-key-camera-stage),
+  .st-key-workspace [data-testid="stColumn"]:has(.st-key-visual-output) {min-width:0; flex-shrink:1;}
+}
 .st-key-workspace h1 {letter-spacing: -0.045em;}
 .st-key-settings-card, .st-key-prediction, .st-key-transcript,
 .st-key-visual-input, .st-key-visual-output {
