@@ -164,6 +164,7 @@ export default function({parentElement, data, setStateValue, setTriggerValue}) {
  const root=parentElement, video=root.querySelector('video'), canvas=root.querySelector('canvas');
  const button=root.querySelector('.camera'), status=root.querySelector('p');
  let s=root.cameraState;
+ if(s && s.mode!==data.mode) {s.stop(); delete root.cameraState; s=null;}
  if(!s) {
   s=root.cameraState={stream:null,busy:false,timer:null,raf:null,inflight:false,ok:false,overlay:null,show:false,frameCanvas:document.createElement('canvas'),controller:null,lastPost:0,data:data};
    const post=async()=>{
@@ -194,7 +195,7 @@ export default function({parentElement, data, setStateValue, setTriggerValue}) {
       const reader=new FileReader();
       const encoded=await new Promise((resolve,reject)=>{reader.onload=()=>resolve(reader.result.split(',')[1]);reader.onerror=reject;reader.readAsDataURL(blob);});
       s.waiting=true; s.sequence=(s.sequence||0)+1;
-      setTriggerValue('frame',{jpeg:encoded,sequence:s.sequence});
+      s.emitFrame({jpeg:encoded,sequence:s.sequence,mode:s.mode});
       return;
      }
     const response=await fetch(d.url,{method:'POST',headers:{'Content-Type':'image/jpeg','X-Frame-Token':d.token},body:blob,signal:controller.signal});
@@ -257,6 +258,8 @@ export default function({parentElement, data, setStateValue, setTriggerValue}) {
   };
   s.draw();
  }
+ s.mode=data.mode;
+ s.emitFrame=payload=>setTriggerValue('frame',payload);
  if(s.waiting && data.ack===s.sequence) {
   s.waiting=false; s.ok=true;
   status.textContent=`Camera on · server round trip ${Math.round(performance.now()-s.lastPost)} ms`;

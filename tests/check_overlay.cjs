@@ -12,7 +12,7 @@ nodes.canvas.getContext = () => ctx;
 const root = {querySelector: key => nodes[key]};
 const render = vm.runInNewContext(source.replace('export default function', '(function') + ')', {
   performance:{now:() => now}, document:{createElement:element},
-  requestAnimationFrame:() => 1,
+  requestAnimationFrame:() => 1, cancelAnimationFrame(){}, clearInterval(){},
 });
 const data = {mirror:false,show:true,overlay:{stamp:1,age:.1,flip:false,points:[Array.from({length:21}, () => [.5,.5])]}};
 render({parentElement:root,data,setStateValue(){}});
@@ -31,4 +31,15 @@ assert(root.cameraState.waiting, 'Old acknowledgment must not release pending fr
 render({parentElement:root,data:{...data,ack:4},setStateValue(){}});
 assert(!root.cameraState.waiting && root.cameraState.ok, 'Matching acknowledgment must restore connection');
 assert(nodes.p.textContent.includes('100 ms'), 'Round-trip timing must be visible');
+let first = 0, latest = 0;
+render({parentElement:root,data,setStateValue(){},setTriggerValue(){first++;}});
+render({parentElement:root,data,setStateValue(){},setTriggerValue(){latest++;}});
+root.cameraState.emitFrame({});
+assert.equal(first, 0, 'Frame loop must not use stale render callback');
+assert.equal(latest, 1, 'Frame loop must use latest trigger callback');
+nodes['.empty'] = element();
+let stopped = false;
+root.cameraState.stream = {getTracks:() => [{stop(){stopped=true;}}]};
+render({parentElement:root,data:{...data,mode:'BISINDO'},setStateValue(){}});
+assert(stopped && root.cameraState.stream === null, 'Mode change must stop old track even when DOM is reused');
 console.log('PASS: landmark hold bridges delayed results, expires on stall, clears on no-hand.');

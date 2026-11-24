@@ -32,9 +32,14 @@ const assert = require('node:assert/strict');
     assert.equal(await mirror.getAttribute('aria-pressed'), 'true');
     assert.equal(await landmarks.getAttribute('aria-pressed'), 'true');
     assert.equal(await track.evaluate(t => t.readyState), 'live');
+    await page.getByRole('radio',{name:'BISINDO',exact:true}).click();
+    await page.getByRole('button',{name:'START',exact:true}).waitFor();
+    assert.equal(await track.evaluate(t => t.readyState), 'ended');
+    await page.getByRole('button',{name:'START',exact:true}).click();
+    const bisindoTrack = await page.locator('video').evaluateHandle(v => v.srcObject.getVideoTracks()[0]);
     await page.getByRole('link',{name:/Text to graphics/}).click();
     await page.getByRole('textbox',{name:'Text to spell',exact:true}).waitFor();
-    assert.equal(await track.evaluate(t => t.readyState), 'ended');
+    assert.equal(await bisindoTrack.evaluate(t => t.readyState), 'ended');
     assert.deepEqual(forbidden, []);
     console.log('PASS: sustained Streamlit frames, isolated sessions, controls preserve camera, navigation closes track, no loopback requests.');
   } finally {await browser.close();}
