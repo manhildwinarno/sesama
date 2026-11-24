@@ -49,16 +49,15 @@ body:has(.st-key-landing) [data-testid="stMainBlockContainer"] {
 .benchmark-verdict {display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:start;}
 .benchmark-verdict h3 {font-size:23px; font-weight:600; letter-spacing:-.6px; padding:0; margin:0;}
 .benchmark-verdict p {font-size:15px; line-height:1.7; color:#5d655f; margin:0; max-width:500px;}
-.benchmark-caveat {font-size:12px; color:#687168; margin:24px 0;}
-.benchmark-method {border-top:1px solid #24252214; border-bottom:1px solid #24252214;}
-.benchmark-method summary {cursor:pointer; padding:18px 4px; font-size:14px; transition:color .2s ease;}
-.benchmark-method summary:hover {color:#526546;}
-.benchmark-method summary:focus-visible {outline:2px solid #596347; outline-offset:3px;}
-.method-content {max-width:880px; padding:0 4px 20px;}
-.method-content h3 {font-size:16px; padding:16px 0 8px; margin:0;}
-.method-content p,.method-content li {font-size:13px; line-height:1.8; color:#5d655f;}
-.method-content ul {padding-left:20px;}
-.method-content .benchmark-source {font-size:11px; overflow-wrap:anywhere;}
+.evaluation-link {display:inline-block; margin-top:28px; font-size:14px; color:#242522; text-decoration:none; border-bottom:1px solid #24252240; padding-bottom:5px; transition:color .2s ease,border-color .2s ease;}
+.evaluation-link:hover {color:#526546; border-color:#526546;}
+.evaluation-link:focus-visible {outline:2px solid #596347; outline-offset:4px;}
+.st-key-evaluation-content {max-width:1100px; margin:48px auto 16px;}
+.st-key-evaluation-content h1 {font-size:clamp(36px,5vw,64px); text-align:left; max-width:none; letter-spacing:-2px; margin:0;}
+.st-key-evaluation-content h2 {font-size:28px; letter-spacing:-1px; margin-top:28px;}
+.st-key-evaluation-content h3 {font-size:20px;}
+.st-key-evaluation-content [data-testid="stMarkdownContainer"] p,.st-key-evaluation-content [data-testid="stMarkdownContainer"] li {line-height:1.75;}
+@media(max-width:767px) {.st-key-evaluation-content [data-testid="stButtonGroup"] [role="radiogroup"] {flex-wrap:wrap;} .st-key-evaluation-content [data-testid="stButtonGroup"] button[role="radio"] {flex-basis:calc(50% - 4px);}}
 .how-section {border-top:1px solid #24252214; padding:64px 0; scroll-margin-top:24px;}
 .how-heading h2 {font-size:clamp(30px,3vw,42px); font-weight:650; letter-spacing:-1.5px; margin:0 0 12px; padding:0;}
 .how-heading > p {font-size:16px; color:#687168; margin:0;}

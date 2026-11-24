@@ -12,9 +12,10 @@ pages = [
     st.Page("app_pages/isyarat.py", title="Sign to text", url_path="sign-to-text", icon=":material/sign_language:"),
     st.Page("app_pages/grafis.py", title="Text to graphics", url_path="text-to-graphics", icon=":material/grid_view:"),
     st.Page("app_pages/panduan.py", title="Help", url_path="help", icon=":material/menu_book:"),
+    st.Page("app_pages/evaluation.py", title="Model evaluation", url_path="model-evaluation", icon=":material/analytics:"),
 ]
 page = st.navigation(pages, position="hidden")
-home = page.title == "Home"
+home = page.title in {"Home", "Model evaluation"}
 if home:
     st.html(Path(__file__).resolve().parent / "assets/landing.css")
 with st.sidebar:
@@ -24,7 +25,7 @@ with st.sidebar:
         st.rerun()
     st.html(f'<style>[data-testid="stSidebar"] {{width: {"220" if expanded else "88"}px !important; min-width: {"220" if expanded else "88"}px !important; max-width: {"220" if expanded else "88"}px !important; --nav-label-width: {"150" if expanded else "0"}px; --nav-label-opacity: {"1" if expanded else "0"};}}</style>')
     with st.container(key="nav-rail"):
-        for item in pages:
+        for item in pages[:4]:
             with st.container(key=f"nav-{'active' if item.title == page.title else item.url_path}"):
                 st.page_link(item, label=item.title, icon=item.icon)
 
