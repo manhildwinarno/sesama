@@ -1,3 +1,3 @@
 # Halaman Streamlit
 
-`app.py` tetap entry point aplikasi. Tambahkan file `.py` di direktori ini ketika halaman baru siap; Streamlit akan menampilkannya pada navigasi multipage bawaan. Jangan menaruh skrip audit atau training di sini.
+Halaman aktif berada di `app_pages/`, didaftarkan eksplisit melalui `st.navigation` di `app.py`. Jangan menambahkan halaman Python di sini; folder ini bukan navigasi multipage lama.

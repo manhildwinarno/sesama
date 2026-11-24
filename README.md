@@ -31,7 +31,8 @@ Suara gTTS membutuhkan internet dan mengirim teks ke Google. Hanya muat joblib t
 | `scripts/` | Skrip audit dan visualisasi; jalankan dari root, misalnya `python scripts/audit_samples.py` |
 | `tests/` | `python tests/test_app.py`, `python tests/test_camera.py`, dan regresi browser |
 | `reports/` | Laporan audit, `figures/` hasil plot, `galleries/` visualisasi HTML |
-| `pages/` | Tempat halaman Streamlit baru; entry point tetap `app.py` |
+| `app_pages/` | Halaman isyarat, grafis, dan panduan melalui `st.navigation`; entry point `app.py` |
+| `static/` | Font Inter lokal dan lisensi; tidak membutuhkan Google Fonts |
 | `logs/` | Log lokal, tidak diunggah |
 
 Notebook menemukan root proyek dari working directory root atau subfoldernya. Path data dan output sudah mengikuti struktur di atas. Notebook training dapat menimpa artefak `models/` jika dijalankan; penataan folder tidak menjalankan training. DLL merupakan bagian environment/dependensi, bukan kode aplikasi; tidak ada DLL ditemukan pada penataan ini.
@@ -71,4 +72,4 @@ Kode ekstraksi asli BISINDO tidak tersedia di folder dataset lokal. Pada sampel 
 
 Regresi browser: jalankan server di port 8511, lalu `node debug_browser.cjs` dengan Playwright tersedia melalui `NODE_PATH` (atau instalasi lokal). `APP_URL` dapat mengganti URL server. Tes memakai webcam sintetis Chromium, memeriksa aliran frame sekitar 90 detik, toggle, STOP/START, serta piksel overlay dengan koordinat simulasi. Ini bukan uji akurasi pose. Komponen kamera berada di luar fragment; overlay dikirim dalam respons POST frame. Hanya panel hasil polling setiap 0,3 detik. Restart server setelah perubahan handler HTTP agar handler lama tidak tetap hidup.
 
-`python test_camera.py` menguji server JPEG loopback: frame valid diterima, token salah, origin asing, dan isi rusak ditolak. `python test_app.py` menguji satu slot frame terbaru, resize rasio tetap, cleanup, serta regresi UI (mode default SIBI, catat manual, spasi/hapus/reset, audio, engine tetap hidup). `python -m py_compile app.py local_camera.py video_engine.py test_app.py test_camera.py` memeriksa sintaks. Uji browser tetap wajib: izin kamera, START/STOP berulang, tombol teks/audio tidak memutus kamera, pergantian mode, overlay, dan latensi nyata.
+`python tests/test_camera.py` menguji server JPEG loopback: frame valid diterima, token salah, origin asing, dan isi rusak ditolak. `python tests/test_app.py` menguji satu slot frame terbaru, resize rasio tetap, cleanup, kontrol teks/audio, navigasi halaman, pilihan bahasa, dan slider tanpa mengganti engine. `python -m compileall -q app.py app_pages local_camera.py video_engine.py tests` memeriksa sintaks. Jika Playwright tersedia, `node tests/check_design.cjs` mengambil screenshot ke `logs/design/` dan memeriksa font, overflow mobile, kamera saat pengaturan berubah, serta penutupan track saat navigasi. Atur `NODE_PATH` ke lokasi Playwright dan `APP_URL` jika bukan `http://localhost:8511`. Uji webcam fisik tetap wajib: izin kamera, START/STOP, pose, dan latensi nyata.

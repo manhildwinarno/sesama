@@ -1,0 +1,35 @@
+/* ponytail: shell memakai DOM Streamlit 1.60; periksa selector setelah upgrade. */
+.stApp {
+  background: radial-gradient(ellipse at 8% 8%, #dceba9 0%, transparent 48%),
+              radial-gradient(ellipse at 96% 88%, #f3d69e 0%, transparent 48%),
+              linear-gradient(125deg, #eaf0d7, #f5d8c9 72%, #f4e3af);
+}
+[data-testid="stHeader"] {background: transparent;}
+[data-testid="stMain"] {
+  margin: 28px 28px 28px 0; border: 1px solid #ffffffcc;
+  border-radius: 30px; background: #f8f9f6ed;
+  box-shadow: 0 18px 60px #363b2510;
+}
+[data-testid="stMainBlockContainer"] {padding: 2.5rem 2rem 3rem;}
+[data-testid="stSidebar"] {
+  background: #f8f9f4e8; border: 1px solid #ffffffb3;
+  border-radius: 30px; margin: 28px 12px 28px 24px;
+  min-width: 225px; max-width: 245px;
+}
+[data-testid="stSidebarNavLink"][aria-current="page"] {background: #20211f; color: #fff; border-radius: 12px;}
+[data-testid="stSidebarNavLink"][aria-current="page"] span {color: #fff;}
+.st-key-workspace {max-width: 1320px; margin-inline: auto;}
+.st-key-workspace h1 {letter-spacing: -0.045em;}
+.st-key-camera-card, .st-key-prediction, .st-key-transcript,
+.st-key-visual-input, .st-key-visual-output {
+  background: #fff; border-radius: 22px; box-shadow: 0 6px 24px #24251f05;
+}
+.st-key-prediction [data-testid="stMetricValue"] {font-size: 3.5rem; line-height: 1.15;}
+.st-key-transcript textarea:disabled {color: var(--st-text-color); -webkit-text-fill-color: var(--st-text-color); opacity: 1;}
+@media (max-width: 767px) {
+  [data-testid="stSidebar"] {background: #f8f9f4; margin: 12px;}
+  [data-testid="stMain"] {margin: 12px; border-radius: 22px;}
+  [data-testid="stMainBlockContainer"] {padding: 2.5rem 1rem 2rem;}
+  .st-key-workspace > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"] {flex-wrap: wrap;}
+  .st-key-workspace > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {min-width: 100%;}
+}

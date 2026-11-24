@@ -1,20 +1,26 @@
 [theme]
-font = "sans-serif"
-baseRadius = "10px"
-buttonRadius = "10px"
+base = "light"
+font = "Inter"
+baseRadius = "12px"
+buttonRadius = "full"
 headingFontSizes = ["32px", "24px", "20px", "18px", "16px", "14px"]
 headingFontWeights = [600, 600, 600, 600, 600, 600]
 
-[theme.light]
-primaryColor = "#202723"
-backgroundColor = "#F6F7F3"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#242C2A"
-borderColor = "#E2E7E1"
+primaryColor = "#20211F"
+backgroundColor = "#F8F9F6"
+secondaryBackgroundColor = "#F0F1EE"
+textColor = "#242522"
+borderColor = "#E5E7E0"
+showSidebarBorder = false
 
-[theme.dark]
-primaryColor = "#23857B"
-backgroundColor = "#181E1C"
-secondaryBackgroundColor = "#232C29"
-textColor = "#EEF1ED"
-borderColor = "#495650"
+[theme.sidebar]
+backgroundColor = "#F8F9F4"
+secondaryBackgroundColor = "#EDEFE8"
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "app/static/InterVariable.woff2"
+weight = "100 900"
+
+[server]
+enableStaticServing = true

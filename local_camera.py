@@ -108,10 +108,11 @@ camera = st.components.v2.component(
     html="""<div class="view"><video autoplay muted playsinline></video><canvas></canvas></div>
 <button type="button">START</button><p role="status">Kamera belum aktif.</p>""",
     css="""
-.view {position:relative; aspect-ratio:16/9; background:#232C29; border-radius:10px; overflow:hidden; margin-bottom:10px;}
+.view {position:relative; aspect-ratio:16/9; background:#242522; border-radius:18px; overflow:hidden; margin-bottom:16px;}
 video,canvas {position:absolute; width:100%; height:100%; object-fit:contain;}
 canvas {pointer-events:none;}
-button {padding:10px 20px; background:#19766D; color:white; border:0; border-radius:10px; cursor:pointer;}
+button {padding:12px 28px; background:#20211F; color:white; border:0; border-radius:999px; cursor:pointer; font:600 14px var(--st-font, sans-serif);}
+button:focus-visible {outline:3px solid #6b7555; outline-offset:3px;}
 button:disabled {opacity:.6; cursor:wait;}
 p {font:14px sans-serif; color:var(--st-text-color);}
 """,
