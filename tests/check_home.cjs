@@ -19,8 +19,10 @@ async function waitForAnchor(page,id) {
    await page.getByRole('heading',{name:'Every letter. A little closer.'}).waitFor();
    assert.equal(await page.locator('video').count(),0,'Home must not mount camera');
    await page.getByTestId('stSidebar').waitFor({state:'hidden'});
+   assert.equal(await page.getByTestId('stSidebar').locator('button, a').count(),0,'Home must not render workspace sidebar controls');
     assert.equal(await page.locator('.hero-demo, .hero-eyebrow, .landing-note').count(),0);
-    assert.equal(await page.locator('#how-it-works ol > li').count(),3);
+     await page.locator('#how-it-works ol > li').nth(2).waitFor();
+     assert.equal(await page.locator('#how-it-works ol > li').count(),3);
     assert.equal(await page.locator('#how-it-works').getByText('Coming soon.',{exact:true}).count(),0);
      assert.equal(await page.locator('.landing-placeholder').count(),0);
      assert.equal(await page.locator('#benefits .benefits-list > li').count(),3);
@@ -198,6 +200,7 @@ async function waitForAnchor(page,id) {
     await page.getByRole('heading',{name:'Why we chose SVM.',exact:true}).waitFor();
     assert.equal(new URL(page.url()).pathname,'/model-evaluation');
     await page.getByTestId('stSidebar').waitFor({state:'hidden'});
+    assert.equal(await page.getByTestId('stSidebar').locator('button, a').count(),0,'Evaluation must not render workspace sidebar controls');
     await page.getByTestId('stVegaLiteChart').nth(1).waitFor();
     assert((await page.getByTestId('stVegaLiteChart').count())>=2);
     await page.getByRole('radio',{name:'Accuracy',exact:true}).click();

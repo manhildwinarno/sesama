@@ -17,17 +17,19 @@ pages = [
 page = st.navigation(pages, position="hidden")
 home = page.title in {"Home", "Model evaluation"}
 if home:
+    st.html('<style>[data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {display:none !important;}</style>')
     st.html(Path(__file__).resolve().parent / "assets/landing.css")
-with st.sidebar:
-    expanded = st.session_state.get("nav_expanded", False)
-    if st.button("Collapse navigation" if expanded else "Expand navigation", icon=":material/menu:", key="nav-toggle", width="stretch"):
-        st.session_state.nav_expanded = not expanded
-        st.rerun()
-    st.html(f'<style>[data-testid="stSidebar"] {{width: {"220" if expanded else "88"}px !important; min-width: {"220" if expanded else "88"}px !important; max-width: {"220" if expanded else "88"}px !important; --nav-label-width: {"150" if expanded else "0"}px; --nav-label-opacity: {"1" if expanded else "0"};}}</style>')
-    with st.container(key="nav-rail"):
-        for item in pages[:4]:
-            with st.container(key=f"nav-{'active' if item.title == page.title else item.url_path}"):
-                st.page_link(item, label=item.title, icon=item.icon)
+else:
+    with st.sidebar:
+        expanded = st.session_state.get("nav_expanded", False)
+        if st.button("Collapse navigation" if expanded else "Expand navigation", icon=":material/menu:", key="nav-toggle", width="stretch"):
+            st.session_state.nav_expanded = not expanded
+            st.rerun()
+        st.html(f'<style>[data-testid="stSidebar"] {{width: {"220" if expanded else "88"}px !important; min-width: {"220" if expanded else "88"}px !important; max-width: {"220" if expanded else "88"}px !important; --nav-label-width: {"150" if expanded else "0"}px; --nav-label-opacity: {"1" if expanded else "0"};}}</style>')
+        with st.container(key="nav-rail"):
+            for item in pages[:4]:
+                with st.container(key=f"nav-{'active' if item.title == page.title else item.url_path}"):
+                    st.page_link(item, label=item.title, icon=item.icon)
 
 # Halaman non-kamera melepas worker dan registrasi token sesi.
 if page.title != "Sign to text" and st.session_state.engine is not None:
