@@ -1,7 +1,7 @@
 import streamlit as st
 
 with st.container(key="workspace"), st.container(border=True):
-    st.subheader("Help")
+    st.subheader("Help", anchor=False)
     with st.expander("Sign to text", expanded=True):
         st.markdown("1. Choose SIBI or BISINDO and turn the camera on.\n2. Keep all fingers visible in even light. Hold a static letter pose until captured.\n3. Release your hand before repeating the same letter.\n4. Use Space, Delete, and Reset to edit. Turn the camera off when finished.")
         st.write("Mirror changes preview only. Flip model input changes inference. BISINDO hand order must match training; support for both hands is not validated.")

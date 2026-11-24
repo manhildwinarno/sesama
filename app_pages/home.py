@@ -24,7 +24,7 @@ with st.container(key="landing"):
         unsafe_allow_javascript=True,
     )
     with st.container(key="landing-hero"):
-        st.title("Every letter. A little closer.")
+        st.title("Every letter. A little closer.", anchor=False)
         st.markdown("Connect through SIBI & BISINDO.")
         with st.container(horizontal=True, horizontal_alignment="center", key="hero-actions"):
             if st.button("Try sign to text", type="primary", icon=":material/arrow_forward:"):

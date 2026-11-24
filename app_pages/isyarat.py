@@ -49,7 +49,7 @@ with workspace:
     settings, center, right = st.columns([1.05, 3.2, 1.4], gap="small")
 with settings:
     with st.container(border=True, key="settings-card"):
-        st.subheader("Recognition")
+        st.subheader("Recognition", anchor=False)
         mode = st.segmented_control("Sign language", ["SIBI", "BISINDO"], default="SIBI", required=True, key="mode", persist_state="session", width="stretch")
         threshold = st.slider("Confidence (%)", 40, 95, 65, key="threshold", persist_state="session",
                               help="Minimum score for automatic capture; not model accuracy.")
@@ -158,7 +158,7 @@ def results():
     if st.session_state.get("camera_error"):
         st.error(st.session_state.camera_error)
     with st.container(border=True, key="transcript"):
-        st.subheader("Transcript")
+        st.subheader("Transcript", anchor=False)
         st.text_area("Recognized text", value=st.session_state.sentence, disabled=True, height=100, label_visibility="collapsed",
                      placeholder="Your letters appear here")
     with st.container(horizontal=True):
