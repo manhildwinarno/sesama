@@ -143,12 +143,19 @@ canvas {pointer-events:none;}
 .empty span {color:#c3c8bc;}
 .label {position:absolute; left:24px; bottom:22px; color:white; font:12px var(--st-font,sans-serif); background:#0005; padding:7px 12px; border-radius:99px;}
 .dock {display:flex; align-items:center; justify-content:center; gap:12px; width:fit-content; margin:0 auto; border-radius:99px; background:#111; padding:8px; color:#fff; font:13px var(--st-font,sans-serif);}
-button {display:grid; place-items:center; width:52px; height:52px; background:#383a36; color:white; border:0; border-radius:50%; cursor:pointer;}
+button {display:grid; place-items:center; width:52px; height:52px; background:#383a36; color:white; border:0; border-radius:50%; cursor:pointer; transition:background-color .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease;}
 button svg {width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:1.7;}
 button.camera[aria-pressed="true"] {background:#e34c43;}
 button:not(.camera)[aria-pressed="true"] {background:#edf1e4; color:#222;}
+@media(hover:hover) {
+ button:not(:disabled):hover {background:#4b4e47; transform:translateY(-2px); box-shadow:0 4px 10px #0004;}
+ button.camera[aria-pressed="true"]:hover {background:#f15b52;}
+ button:not(.camera)[aria-pressed="true"]:hover {background:#dce6d0;}
+}
+button:not(:disabled):active {transform:scale(.95); box-shadow:none;}
 button:focus-visible {outline:3px solid #6b7555; outline-offset:3px;}
 button:disabled {opacity:.6; cursor:wait;}
+@media(prefers-reduced-motion:reduce) {button {transition:none;} button:not(:disabled):hover, button:not(:disabled):active {transform:none;}}
 p {font:12px var(--st-font,sans-serif); color:var(--st-text-color); text-align:center;}
 @media(max-width:600px) {.view {border-radius:20px;} button {width:44px;height:44px;}}
 """,
@@ -232,7 +239,8 @@ export default function({parentElement, data, setStateValue, setTriggerValue}) {
     if(canvas.width!==w || canvas.height!==h) {canvas.width=w;canvas.height=h;}
     const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,w,h);
     const o=s.overlay;
-    if(s.show && o && performance.now()-s.received<350) {
+     // ponytail: hold latest real result for 1s; faster tracking needs lower transport/inference latency.
+     if(s.show && o && performance.now()-s.received<1000) {
      ctx.strokeStyle='#DDEAE5';ctx.fillStyle='#63CEB5';ctx.lineWidth=2;
      for(const hand of o.points) {
       const points=hand.map(([x,y])=>[(o.flip?1-x:x)*w,y*h]);

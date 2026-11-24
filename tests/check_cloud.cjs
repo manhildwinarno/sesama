@@ -19,6 +19,10 @@ const assert = require('node:assert/strict');
     await page.getByRole('button',{name:'Mirror preview',exact:true}).click();
     const mirror = page.getByRole('button',{name:'Mirror preview',exact:true});
     const landmarks = page.getByRole('button',{name:'Show hand landmarks',exact:true});
+    for (const control of [mirror, landmarks, page.getByRole('button',{name:'STOP',exact:true})]) {
+      await control.hover();
+      assert(await control.evaluate(e => e.matches(':hover') && getComputedStyle(e).transitionDuration.includes('0.18s')), 'Dock hover/transition missing');
+    }
     await page.locator('video[style*="transform: none"]').waitFor();
     assert.equal(await mirror.getAttribute('aria-pressed'), 'false');
     await landmarks.click();
