@@ -6,11 +6,11 @@ headingFontSizes = ["32px", "24px", "20px", "18px", "16px", "14px"]
 headingFontWeights = [600, 600, 600, 600, 600, 600]
 
 [theme.light]
-primaryColor = "#19766D"
-backgroundColor = "#FAFAF7"
-secondaryBackgroundColor = "#EFEFEB"
+primaryColor = "#202723"
+backgroundColor = "#F6F7F3"
+secondaryBackgroundColor = "#FFFFFF"
 textColor = "#242C2A"
-borderColor = "#CCCFCA"
+borderColor = "#E2E7E1"
 
 [theme.dark]
 primaryColor = "#23857B"

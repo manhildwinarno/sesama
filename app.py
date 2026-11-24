@@ -26,6 +26,12 @@ ROOT = Path(__file__).resolve().parent
 st.set_page_config(page_title="Demo SIBI & BISINDO", layout="wide")
 # ponytail: CSS terbatas pada wadah milik aplikasi; periksa setelah upgrade Streamlit.
 st.html("""<style>
+.stApp {background: linear-gradient(125deg, #e6eee7 0%, #f6f3ee 55%, #f4e5db 100%);}
+[data-testid="stSidebar"] {background: #f7f8f5; min-width: 230px; max-width: 260px;}
+[data-testid="stMainBlockContainer"] {padding-top: 2.5rem; padding-bottom: 3rem;}
+[data-testid="stVerticalBlockBorderWrapper"] > div {border-radius: 22px; background: #ffffff;}
+h1 {letter-spacing: -0.045em;}
+button[kind="primary"] {background: #202723; border-color: #202723; color: white;}
 .st-key-workspace {max-width: 1320px; margin-inline: auto;}
 .st-key-prediction [data-testid="stMetricValue"] {font-size: 3.5rem; line-height: 1.15;}
 .st-key-transcript textarea:disabled {color: var(--st-text-color); -webkit-text-fill-color: var(--st-text-color); opacity: 1;}
@@ -56,18 +62,11 @@ def accept_candidate():
 
 
 with st.sidebar:
+    st.title("kata")
+    st.caption("Ruang belajar abjad isyarat")
     task = st.radio("Mode aplikasi", ["Isyarat ke teks", "Teks ke grafis"])
-    st.subheader("Pengaturan")
-    st.caption("Sesuaikan deteksi tanpa mengganti model.")
-    with st.expander("Orientasi input", expanded=True):
-        flip = st.toggle("Balik input model", help="Mengubah gambar yang dianalisis, bukan preview. Bandingkan skor dengan pose yang sama; pilihan tangan belum otomatis.")
-        reverse = st.toggle("Tukar urutan tangan BISINDO")
-        st.caption("Urutan dua tangan harus sesuai data pelatihan BISINDO.")
-    with st.expander("Pencatatan otomatis"):
-        threshold = st.slider("Batas keyakinan (%)", 40, 95, 65,
-                              help="Skor minimum sebelum huruf dicatat, bukan akurasi model.")
-        hold = st.slider("Tahan pose (detik)", 0.2, 2.0, 0.4)
-    with st.expander("Tentang demo"):
+    st.divider()
+    with st.expander("Panduan"):
         st.write("Pengenalan abjad statis, bukan penerjemahan tata bahasa atau gerakan dinamis.")
         st.caption("Teks ke grafis tersedia dengan aset terbatas. Rekaman suara belum tersedia.")
 
@@ -79,10 +78,19 @@ if task == "Teks ke grafis":
     st.title("Teks ke grafis abjad")
     st.caption("Ejaan huruf per huruf, bukan terjemahan tata bahasa isyarat. Grafis statis tidak memperagakan gerakan.")
     visual_mode = st.radio("Bahasa grafis", ["BISINDO", "SIBI"], horizontal=True)
-    text = st.text_area("Teks yang dieja", max_chars=120, placeholder="Contoh: IQ", key="visual_text")
+    input_panel, output_panel = st.columns([2, 3], gap="large")
+    with input_panel, st.container(border=True):
+        st.subheader("Tulis kata")
+        text = st.text_area("Teks yang dieja", max_chars=120, placeholder="Contoh: AKU", key="visual_text", height=180)
+        st.button("Bersihkan", on_click=lambda: st.session_state.update(visual_text=""))
+        st.caption("Hasil diperbarui langsung. Huruf A–Z didukung; spasi memisahkan kata.")
     assets = {letter: ROOT / "assets/BISINDO" / (f"{letter}.jpeg" if letter == "I" else f"{letter}.png") for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"} if visual_mode == "BISINDO" else {}
     st.caption("BISINDO: aset A–Z tersedia; pose belum diverifikasi secara independen. Sumber aset: elemen Canva, menurut pengguna. SIBI: placeholder.")
-    if text.strip():
+    with output_panel, st.container(border=True):
+      st.subheader("Grafis abjad")
+      if not text.strip():
+        st.info("Tulis teks untuk melihat ejaan grafis.")
+      if text.strip():
         for number, word in enumerate(text.upper().split(), 1):
             st.write(f"Kata {number}: {word}")
             for start in range(0, len(word), 5):
@@ -100,10 +108,22 @@ if task == "Teks ke grafis":
 
 workspace = st.container(key="workspace")
 with workspace:
-    st.caption("ROIN · Demo lokal")
+    st.caption("KATA / ISYARAT KE TEKS")
     st.title("Isyarat tangan, hasil dalam teks")
     st.write("Peragakan abjad, tahan pose, lalu rangkai kata. Mikrofon tidak digunakan.")
     mode = st.radio("Bahasa isyarat", ["SIBI", "BISINDO"], index=0, key="mode", horizontal=True)
+    with st.expander("Pengaturan pengenalan"):
+        automatic, orientation = st.columns(2, gap="large")
+        with automatic:
+            st.subheader("Pencatatan otomatis")
+            threshold = st.slider("Batas keyakinan (%)", 40, 95, 65,
+                                  help="Skor minimum sebelum huruf dicatat, bukan akurasi model.")
+            hold = st.slider("Tahan pose (detik)", 0.2, 2.0, 0.4)
+        with orientation:
+            st.subheader("Orientasi input")
+            flip = st.toggle("Balik input model", help="Mengubah gambar inferensi, bukan preview. Bukan koreksi otomatis.")
+            reverse = st.toggle("Tukar urutan tangan BISINDO", disabled=mode != "BISINDO")
+            st.caption("Urutan harus cocok data pelatihan. Satu tangan tidak terpengaruh; perubahan bisa memperburuk hasil.")
 engine = st.session_state.engine
 server = get_frame_server()
 token = st.session_state.setdefault("frame_token", new_token())
@@ -133,7 +153,7 @@ with left:
     engine = st.session_state.engine
     if engine is None or not engine.running:
         engine = create_engine()
-    engine.configure(flip, reverse, mirror, threshold, hold, show_landmarks)
+    engine.configure(flip, reverse if mode == "BISINDO" else False, mirror, threshold, hold, show_landmarks)
     server.register(token, engine)
 
     camera(key=f"local-camera-{mode}", data={
