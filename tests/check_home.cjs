@@ -1,6 +1,14 @@
 // NODE_PATH=<Playwright location> APP_URL=http://localhost:8519 node tests/check_home.cjs
 const {chromium} = require('playwright');
 const assert = require('node:assert/strict');
+async function waitForAnchor(page,id) {
+ await page.waitForFunction(id=>{
+  const main=document.querySelector('[data-testid="stMain"]');
+  const target=document.getElementById(id);
+  const top=target.getBoundingClientRect().top-main.getBoundingClientRect().top+main.scrollTop-parseFloat(getComputedStyle(target).scrollMarginTop||0);
+  return Math.abs(main.scrollTop-Math.max(0,Math.min(top,main.scrollHeight-main.clientHeight)))<2;
+ },id);
+}
 (async()=>{
  const browser=await chromium.launch();
  try {
@@ -17,6 +25,9 @@ const assert = require('node:assert/strict');
      assert.equal(await page.locator('.landing-placeholder').count(),0);
      assert.equal(await page.locator('#benefits .benefits-list > li').count(),3);
      assert.equal(await page.locator('#benefits').getByText('Coming soon.',{exact:true}).count(),0);
+     await page.getByRole('contentinfo',{name:'Site footer'}).waitFor();
+     assert.equal(await page.locator('.landing-footer a[href*="instagram"]').count(),0);
+     assert.equal(await page.locator('.footer-links a').count(),6);
     assert.equal(await page.locator('#benchmark table').count(),2);
     assert.equal(await page.locator('#benchmark tbody tr').count(),6);
     assert.deepEqual(await page.locator('.benchmark-selected td').allTextContents(),['95.92%','95.84%','95.95%','95.92%']);
@@ -28,7 +39,11 @@ const assert = require('node:assert/strict');
     const margin=width<768?8:16;
     const cardBox=await page.getByTestId('stMainBlockContainer').boundingBox();
     const area=await main.evaluate(el=>({width:el.clientWidth,background:getComputedStyle(el).backgroundColor}));
-    assert.equal(area.background,'rgba(0, 0, 0, 0)','Scrollbar container must show gradient, not white');
+     assert.equal(area.background,'rgba(0, 0, 0, 0)','Scrollbar container must show gradient, not white');
+     assert.equal(await main.evaluate(el=>getComputedStyle(el).scrollBehavior),'smooth');
+     const brand=page.locator('.landing-nav .landing-brand');
+     await brand.hover();
+     assert.deepEqual(await brand.evaluate(el=>{const s=getComputedStyle(el);return [s.backgroundColor,s.transform,s.transitionDuration];}),['rgba(0, 0, 0, 0)','none','0s']);
     assert(Math.abs(mainBox.x)<=1 && Math.abs(mainBox.width-width)<=1,'Scroll area must reach viewport edge');
     assert(Math.abs(cardBox.x-margin)<=1 && Math.abs(area.width-cardBox.x-cardBox.width-margin)<=1,'White card needs equal margins inside scroll area');
     const heroBox=await page.locator('.st-key-landing-hero').boundingBox();
@@ -38,7 +53,8 @@ const assert = require('node:assert/strict');
     const links=page.locator(width<900?'.mobile-nav':'.desktop-links');
     for(const anchor of ['how-it-works','benchmark','benefits','faq']) {
      await links.locator(`a[href="#${anchor}"]`).click();
-     await page.waitForFunction(id=>location.hash==='#'+id,anchor);
+      await page.waitForFunction(id=>location.hash==='#'+id,anchor);
+      await waitForAnchor(page,anchor);
      const box=await page.locator('#'+anchor).boundingBox();
      assert(box.y>=0 && box.y<900,'Anchor target must scroll into view');
      if(anchor==='how-it-works') {
@@ -96,7 +112,8 @@ const assert = require('node:assert/strict');
        await page.locator('.motion-stage').evaluateAll(stages=>stages.forEach(stage=>stage.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=3300;})));
        await page.locator('#how-it-works').evaluate(el=>el.scrollIntoView());
       await page.screenshot({path:`logs/design/how-it-works-${width}.png`});
-      await page.emulateMedia({reducedMotion:'reduce'});
+       await page.emulateMedia({reducedMotion:'reduce'});
+       assert.equal(await main.evaluate(el=>getComputedStyle(el).scrollBehavior),'auto');
       assert.equal(await selection.evaluate(el=>el.getAnimations().length),0);
        assert(await page.locator('.alphabet-motion .motion-cursor').isHidden());
         assert.equal(await page.locator('.demo-pose').evaluate(el=>el.getAnimations().length),0);
@@ -145,7 +162,14 @@ const assert = require('node:assert/strict');
       await page.locator('#benchmark').evaluate(el=>el.scrollIntoView());
       await page.screenshot({path:`logs/design/benchmark-${width}.png`});
      }
-    }
+     }
+     await page.locator('.landing-footer').evaluate(el=>el.scrollIntoView({behavior:'instant',block:'end'}));
+     const footerColumns=await page.locator('.footer-columns > *').evaluateAll(es=>es.map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y};}));
+     assert(width<768 ? footerColumns[1].y>footerColumns[0].y : Math.abs(footerColumns[1].y-footerColumns[0].y)<1,'Footer columns stack on mobile');
+     assert(await main.evaluate(el=>el.scrollWidth<=el.clientWidth),'Footer must not overflow');
+     await page.locator('.landing-footer').screenshot({path:`logs/design/footer-${width}.png`});
+     await page.locator('.footer-links a[href="#how-it-works"]').click();
+     await waitForAnchor(page,'how-it-works');
      await page.locator('.st-key-landing-faq details').nth(3).locator('summary').click();
      await page.locator('.st-key-landing-faq').getByRole('link',{name:/Model evaluation/}).click();
     await page.getByRole('heading',{name:'Why we chose SVM.',exact:true}).waitFor();

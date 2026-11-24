@@ -4,7 +4,9 @@ Grafik evaluasi interaktif memakai Altair bawaan Streamlit, tanpa library tambah
 
 Home `/` menampilkan Navbar, Hero, How it works, Benchmark, Benefits, dan FAQ **sesama**. Route fitur: `/sign-to-text`, `/text-to-graphics`, dan `/help`. Landing tidak menyalakan kamera. Benefits merangkum dukungan dua abjad, kontrol edit teks, dan text-to-speech online. FAQ memakai expander native: batas abjad statis, izin kamera, koreksi hasil, evaluasi model, pemrosesan frame di server, dan internet/gTTS. Benchmark memakai output notebook tersimpan di `assets/benchmark.json`, bukan evaluasi webcam. Link `/model-evaluation` membuka grafik empat metrik, tabel lengkap, metode, batas evaluasi, dan analisis numerik SIBI; tidak menjalankan training. Periksa data dengan `python tests/test_benchmark.py` (mencocokkan notebook bila tersedia lokal). Navigasi mobile memakai menu lipat. Screenshot/regresi landing: `node tests/check_home.cjs` dengan Playwright dan `APP_URL` server uji.
 
-Nama sementara aplikasi **kata**. UI Inggris: **Sign to text**, **Text to graphics**, dan **Help**. Sidebar hanya navigasi; pengaturan pengenalan berada di workspace. FPS/inferensi tersedia di **Diagnostics**.
+Footer landing memuat identitas sesama, institusi, dan navigasi tanpa Instagram. Edit isi di `app_pages/home.py`, warna/jarak di `.landing-footer` pada `assets/landing.css`. Link section memakai CSS smooth scroll pada `stMain`; `prefers-reduced-motion` menonaktifkannya. Logo navbar tidak memakai hover/transisi.
+
+Nama aplikasi **sesama**. UI Inggris: **Sign to text**, **Text to graphics**, dan **Help**. Sidebar hanya navigasi; pengaturan pengenalan berada di workspace. FPS/inferensi tersedia di **Diagnostics**.
 
 Demo lokal pengenalan abjad statis MediaPipe + SVM, bukan penerjemah tata bahasa atau gerakan dinamis. Jalankan `run_app.bat` atau `bash run_app.sh`; Jupyter tidak diperlukan. Launcher memakai `.venv` secara default. Dependensi: `python -m pip install -r requirements.txt` dengan interpreter environment aplikasi. `streamlit-webrtc`/`av` tidak dipakai aplikasi.
 

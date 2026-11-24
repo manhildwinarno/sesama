@@ -1,5 +1,6 @@
 import base64
 import json
+from datetime import date
 from pathlib import Path
 
 import streamlit as st
@@ -114,3 +115,18 @@ with st.container(key="landing"):
                 st.markdown(answer)
                 if question == "How accurate is it, and why SVM?":
                     st.page_link("app_pages/evaluation.py", label="Model evaluation", icon=":material/arrow_outward:")
+
+    st.html(f'''
+        <footer class="landing-footer" role="contentinfo" aria-label="Site footer">
+          <div class="footer-columns">
+            <div class="footer-about"><a class="footer-brand" href="/" target="_self" aria-label="sesama home">sesama</a><p>Bringing static SIBI &amp; BISINDO letters closer, one sign at a time.</p></div>
+            <div class="footer-institution"><h2>Institution</h2><p>IPB University<br>Machine Learning project<br>Bogor, West Java, Indonesia</p></div>
+            <nav class="footer-explore" aria-label="Footer navigation"><h2>Explore</h2><div class="footer-links">
+              <a href="/sign-to-text" target="_self">Open workspace</a><a href="#how-it-works" target="_self">How it works</a>
+              <a href="/model-evaluation" target="_self">Model evaluation</a><a href="#benefits" target="_self">Benefits</a>
+              <a href="/text-to-graphics" target="_self">Text to graphics</a><a href="#faq" target="_self">FAQ</a>
+            </div></nav>
+          </div>
+          <div class="footer-bottom"><p>© {date.today().year} sesama</p><p>A Machine Learning course project.</p></div>
+        </footer>
+    ''')
