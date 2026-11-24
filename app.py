@@ -2,7 +2,7 @@ from pathlib import Path
 
 import streamlit as st
 
-st.set_page_config(page_title="sesama", page_icon=":material/sign_language:", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="sesama | Pengenal Abjad SIBI & BISINDO", page_icon=":material/sign_language:", layout="wide", initial_sidebar_state="expanded")
 st.html(Path(__file__).resolve().parent / "assets/workspace.css")
 for key, value in {"sentence": "", "audio": None, "engine": None, "candidate": ""}.items():
     st.session_state.setdefault(key, value)

@@ -62,7 +62,7 @@ const fs = require('node:fs');
     assert(await track.evaluate(t => t.readyState === 'live'), 'Settings stopped camera');
     await page.getByRole('link', {name:'Text to graphics'}).click();
     await page.getByRole('textbox', {name:'Text to spell',exact:true}).fill('IQ AKU!');
-    assert.equal(await page.title(), 'sesama');
+    assert.equal(await page.title(), 'sesama | Pengenal Abjad SIBI & BISINDO');
     await page.getByRole('textbox', {name:'Text to spell',exact:true}).fill('A'.repeat(120));
     const inputBox = await page.getByRole('textbox', {name:'Text to spell',exact:true}).boundingBox();
     const hintBox = await page.getByTestId('InputInstructions').boundingBox();
