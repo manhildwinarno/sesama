@@ -76,19 +76,26 @@ const assert = require('node:assert/strict');
         blur.pause(); blur.currentTime=960;
         const active=getComputedStyle(el).filter.includes('blur(0.8px)'); blur.play(); return active;
        }),'Cursor should blur during movement');
-       await page.getByRole('button',{name:/Pause animations/}).click();
-       await page.locator('.motion-paused').waitFor();
-       assert.equal(await selection.evaluate(el=>getComputedStyle(el).animationPlayState),'paused');
-       assert.equal(await page.locator('.demo-pose').evaluate(el=>getComputedStyle(el).animationPlayState),'paused');
-       await page.getByRole('button',{name:/Resume animations/}).click();
-       await page.locator('.how-section:not(.motion-paused)').waitFor();
+        assert.equal(await page.getByRole('button',{name:/Pause animations|Resume animations/}).count(),0);
+        assert.equal(await page.locator('.motion-label, .motion-example').count(),0);
+        const transcript=await page.locator('.text-motion').evaluate(stage=>{
+         const sample=time=>{
+          stage.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=time;});
+          return ['.demo-letter-h','.demo-letter-i','.demo-space'].map((selector,i)=>{
+           const style=getComputedStyle(stage.querySelector(selector));return i===2?style.width:style.opacity;
+          });
+         };
+         return [sample(0),sample(1800),sample(3300),sample(5100)];
+        });
+        assert.deepEqual(transcript,[['0','0','0px'],['1','1','0px'],['1','1','18px'],['1','1','0px']],'Transcript shows HI, adds space, then deletes space');
        await page.locator('.motion-stage').evaluateAll(stages=>stages.forEach(stage=>stage.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=3300;})));
        await page.locator('#how-it-works').evaluate(el=>el.scrollIntoView());
       await page.screenshot({path:`logs/design/how-it-works-${width}.png`});
       await page.emulateMedia({reducedMotion:'reduce'});
       assert.equal(await selection.evaluate(el=>el.getAnimations().length),0);
        assert(await page.locator('.alphabet-motion .motion-cursor').isHidden());
-       assert.equal(await page.locator('.demo-pose').evaluate(el=>el.getAnimations().length),0);
+        assert.equal(await page.locator('.demo-pose').evaluate(el=>el.getAnimations().length),0);
+        assert.equal(await page.locator('.text-motion').evaluate(el=>el.getAnimations({subtree:true}).length),0);
       await page.emulateMedia({reducedMotion:'no-preference'});
      }
     }
@@ -106,6 +113,6 @@ const assert = require('node:assert/strict');
    assert.deepEqual(errors,[]);
    await page.close();
   }
-   console.log('PASS: desktop/mobile home, tutorial loops/blur/pause/reduced motion, no live camera, anchors and CTA.');
+   console.log('PASS: desktop/mobile home, three tutorial loops, blur/reduced motion, clean labels, no live camera, anchors and CTA.');
  } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
