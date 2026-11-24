@@ -143,7 +143,7 @@ def results():
         st.progress(min(1.0, max(0.0, confidence / 100)),
                     text=f"Confidence {confidence:.1f}%")
         if not active:
-            status = "Camera off"
+            status = "Waiting for camera frames"
         elif not candidate:
             status = "Waiting for a hand"
         elif confidence < threshold:

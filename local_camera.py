@@ -169,8 +169,10 @@ export default function({parentElement, data, setStateValue, setTriggerValue}) {
    const post=async()=>{
     if(!s.stream || document.hidden) return;
     if(s.data.transport==='streamlit' && s.waiting) {
-     if(performance.now()-s.lastPost>15000) status.textContent='Connection stalled. Turn camera off and on to retry.';
-     return;
+     if(performance.now()-s.lastPost<5000) return;
+     // Retry one fresh frame, not a backlog, after a lost acknowledgment.
+     s.waiting=false; s.ok=false;
+     status.textContent='Recognition connection slow. Retrying…';
     }
    if(s.inflight) {
     if(performance.now()-s.lastPost<3500) return;
@@ -225,7 +227,7 @@ export default function({parentElement, data, setStateValue, setTriggerValue}) {
     if(!s.busy) {stream.getTracks().forEach(t=>t.stop());return;}
     s.stream=stream; video.srcObject=stream; await video.play();
     root.querySelector('.view').style.aspectRatio=`${video.videoWidth}/${video.videoHeight}`;
-    status.textContent='Camera on';
+    status.textContent=s.data.transport==='streamlit'?'Camera on · connecting recognition…':'Camera on';
     button.setAttribute('aria-label','STOP'); button.setAttribute('aria-pressed','true'); button.title='Turn camera off'; root.querySelector('.empty').style.display='none'; button.disabled=false; s.busy=false;
     s.timer=setInterval(post,s.data.transport==='streamlit'?200:100);
     if(s.raf===null) s.draw();
@@ -255,7 +257,10 @@ export default function({parentElement, data, setStateValue, setTriggerValue}) {
   };
   s.draw();
  }
- if(data.ack===s.sequence) {s.waiting=false;}
+ if(s.waiting && data.ack===s.sequence) {
+  s.waiting=false; s.ok=true;
+  status.textContent=`Camera on · server round trip ${Math.round(performance.now()-s.lastPost)} ms`;
+ }
   root.querySelector('.mirror').onclick=()=>{
    const next=!s.data.mirror; s.data={...s.data,mirror:next};
    root.querySelector('.mirror').setAttribute('aria-pressed',String(next));
