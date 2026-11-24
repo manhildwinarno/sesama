@@ -1,5 +1,7 @@
 # Demo SIBI & BISINDO
 
+Home `/` menampilkan Navbar dan Hero **sesama**. Route fitur: `/sign-to-text`, `/text-to-graphics`, dan `/help`. Navbar/Hero tidak menyalakan kamera; section landing berikutnya belum dibuat. Screenshot/regresi landing: `node tests/check_home.cjs` dengan Playwright dan `APP_URL` server uji.
+
 Nama sementara aplikasi **kata**. UI Inggris: **Sign to text**, **Text to graphics**, dan **Help**. Sidebar hanya navigasi; pengaturan pengenalan berada di workspace. FPS/inferensi tersedia di **Diagnostics**.
 
 Demo lokal pengenalan abjad statis MediaPipe + SVM, bukan penerjemah tata bahasa atau gerakan dinamis. Jalankan `run_app.bat` atau `bash run_app.sh`; Jupyter tidak diperlukan. Launcher memakai `.venv` secara default. Dependensi: `python -m pip install -r requirements.txt` dengan interpreter environment aplikasi. `streamlit-webrtc`/`av` tidak dipakai aplikasi.

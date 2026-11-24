@@ -8,11 +8,15 @@ for key, value in {"sentence": "", "audio": None, "engine": None, "candidate": "
     st.session_state.setdefault(key, value)
 
 pages = [
-    st.Page("app_pages/isyarat.py", title="Sign to text", url_path="isyarat", icon=":material/sign_language:", default=True),
-    st.Page("app_pages/grafis.py", title="Text to graphics", url_path="grafis", icon=":material/grid_view:"),
-    st.Page("app_pages/panduan.py", title="Help", url_path="panduan", icon=":material/menu_book:"),
+    st.Page("app_pages/home.py", title="Home", icon=":material/home:", default=True),
+    st.Page("app_pages/isyarat.py", title="Sign to text", url_path="sign-to-text", icon=":material/sign_language:"),
+    st.Page("app_pages/grafis.py", title="Text to graphics", url_path="text-to-graphics", icon=":material/grid_view:"),
+    st.Page("app_pages/panduan.py", title="Help", url_path="help", icon=":material/menu_book:"),
 ]
 page = st.navigation(pages, position="hidden")
+home = page.title == "Home"
+if home:
+    st.html(Path(__file__).resolve().parent / "assets/landing.css")
 with st.sidebar:
     expanded = st.session_state.get("nav_expanded", False)
     if st.button("Collapse navigation" if expanded else "Expand navigation", icon=":material/menu:", key="nav-toggle", width="stretch"):
@@ -29,6 +33,7 @@ if page.title != "Sign to text" and st.session_state.engine is not None:
     st.session_state.engine.close()
     st.session_state.engine = None
 
-with st.container(key="brand"):
-    st.markdown("**sesama**", text_alignment="center")
+if not home:
+    with st.container(key="brand"):
+        st.markdown("**sesama**", text_alignment="center")
 page.run()

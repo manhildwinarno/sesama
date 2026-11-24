@@ -182,6 +182,15 @@ if __name__ == "__main__":
          patch("local_camera.get_frame_server", return_value=UIServer()):
         app = AppTest.from_file("app.py", default_timeout=90).run()
         assert not app.exception, [e.value for e in app.exception]
+        assert app.session_state["engine"] is None, "Home must not start inference"
+        # AppTest.switch_page hashes filename, but st.Page hashes custom English URL.
+        from streamlit.util import calc_hash
+        def switch_page(path):
+            app._page_hash = calc_hash({"isyarat":"sign-to-text", "grafis":"text-to-graphics", "panduan":"help"}[Path(path).stem])
+            return app
+        app.switch_page = switch_page
+        app.switch_page("app_pages/isyarat.py").run()
+        assert not app.exception, [e.value for e in app.exception]
         def segment(label):
             return next(r for r in app.button_group if r.label == label)
         assert segment("Sign language").value == "SIBI"
