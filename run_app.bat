@@ -16,19 +16,19 @@ if not exist "%PYTHON%" (
 
 echo ============================================================
 echo  Menjalankan aplikasi Streamlit...
-echo  Port lokal kosong dipilih otomatis. URL tampil di bawah.
+echo  Browser akan terbuka otomatis di http://localhost:8501
 echo  Tekan Ctrl+C untuk menghentikan server.
-echo  Error server tampil langsung di terminal ini.
+echo  Log lengkap: logs\streamlit_log.txt
 echo ============================================================
 echo.
 
-"%PYTHON%" scripts\launch_app.py %*
+"%PYTHON%" -m streamlit run app.py %* >> "%LOGFILE%" 2>&1
 
 set "EXITCODE=%errorlevel%"
 echo.
 if not "%EXITCODE%"=="0" (
     echo [PERINGATAN] Streamlit berhenti dengan kode keluar %EXITCODE%.
-    echo Periksa pesan di terminal ini untuk detail error.
+    echo Periksa logs\streamlit_log.txt untuk detail error.
 ) else (
     echo Server Streamlit telah berhenti.
 )

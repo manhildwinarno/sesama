@@ -19,4 +19,4 @@ echo "Menjalankan aplikasi Streamlit..."
 echo "Tekan Ctrl+C untuk menghentikan server."
 echo
 
-exec "$PYTHON" scripts/launch_app.py "$@"
+exec "$PYTHON" -m streamlit run app.py "$@"
