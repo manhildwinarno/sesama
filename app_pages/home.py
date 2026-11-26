@@ -25,7 +25,7 @@ with st.container(key="landing"):
     )
     with st.container(key="landing-hero"):
         st.title("Every letter. A little closer.", anchor=False)
-        st.markdown("Connect through SIBI & BISINDO.")
+        st.markdown("Connect through SIBI & BISINDO. Turn static hand signs into letters, build your words, and let them be heard.")
         with st.container(horizontal=True, horizontal_alignment="center", key="hero-actions"):
             if st.button("Try sign to text", type="primary", icon=":material/arrow_forward:"):
                 st.switch_page("app_pages/isyarat.py")
