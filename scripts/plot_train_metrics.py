@@ -1,12 +1,13 @@
 """Evaluate saved SVMs without refitting. Run: python scripts/plot_train_metrics.py."""
 import json
+import argparse
 from pathlib import Path
 
 import joblib
 import matplotlib
 import numpy as np
 import pandas as pd
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay, precision_recall_fscore_support
 from sklearn.model_selection import train_test_split
 
 matplotlib.use("Agg")
@@ -15,7 +16,7 @@ import matplotlib.pyplot as plt
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def main():
+def main(matrix_only=False):
     benchmark = json.loads((ROOT / "assets/benchmark.json").read_text(encoding="utf-8"))
     rows = []
     for mode, source, recorded in zip(
@@ -42,6 +43,27 @@ def main():
             if split == "Test":
                 assert round(accuracy, 6) == recorded["models"][0]["accuracy"]
                 assert round(f1, 6) == recorded["models"][0]["weighted_f1"]
+                if mode == "bisindo":
+                    matrix = confusion_matrix(actual, predicted, labels=model.classes_)
+                    assert matrix.sum() == len(actual) and matrix.trace() == (actual == predicted).sum()
+                    output = ROOT / "logs/design"
+                    output.mkdir(parents=True, exist_ok=True)
+                    fig, ax = plt.subplots(figsize=(13, 12))
+                    ConfusionMatrixDisplay(matrix, display_labels=encoder.inverse_transform(model.classes_)).plot(
+                        ax=ax, cmap="Blues", values_format="d", colorbar=False,
+                        im_kw={"interpolation": "nearest"}, text_kw={"fontsize": 7})
+                    ax.set(title="Confusion Matrix SVM (RBF) — BISINDO", xlabel="Prediksi model", ylabel="Label aktual")
+                    fig.text(.5, .025, f"Test: {len(actual):,} sampel | Benar: {matrix.trace():,} | Salah: {len(actual)-matrix.trace():,} | Accuracy: {accuracy:.2%}\nStratified split 80:20, random_state=42. Prediksi model tersimpan, tanpa training ulang.",
+                             ha="center", fontsize=11)
+                    fig.tight_layout(rect=(0, .065, 1, 1))
+                    fig.savefig(output / "confusion-matrix-bisindo.png", dpi=200, facecolor="white")
+                    plt.close(fig)
+                    pd.DataFrame(matrix, index=encoder.inverse_transform(model.classes_),
+                                 columns=encoder.inverse_transform(model.classes_)).to_csv(output / "confusion-matrix-bisindo.csv", index_label="actual")
+                    if matrix_only:
+                        print(f"PASS: BISINDO {matrix.trace()}/{len(actual)} correct, accuracy {accuracy:.6%}, weighted F1 {f1:.6%}")
+                        print(output / "confusion-matrix-bisindo.png")
+                        return
             rows.append(dict(dataset=mode.upper(), split=split, samples=len(actual),
                              accuracy=accuracy, precision=precision, recall=recall, weighted_f1=f1))
 
@@ -77,4 +99,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--matrix-only", action="store_true", help="Export only the BISINDO confusion matrix")
+    main(parser.parse_args().matrix_only)
